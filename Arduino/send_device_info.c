@@ -1,30 +1,67 @@
 #define output_pin 7
+#define device1_pin 8
+#define device2_pin 9
 
+int state = 0;
 
 void send_device_info(){
+    char dev[] = "1:t,2:f"; // we can use this format : "pin_no : device_code"
     
+//    BTserial.print(dev);
+	Serial.println(dev); // one of these lines should work, unable to test
 }
+
+
+void perform_command(char inp[]){
+	int d = inp[0];
+	int c = inp[1];
+	
+	switch(d){
+		case '1': //code for device 1
+			if (c == '1') digitalWrite(device1_pin, HIGH);
+			else digitalWrite(device1_pin, LOW);
+			break;
+		case '2': //code for device 2
+			if (c == '1') digitalWrite(device2_pin, HIGH);
+			else digitalWrite(device2_pin, LOW);
+			break;
+	}
+}
+
 
 void setup() {
     pinMode(output_pin, OUTPUT);
     // digitalWrite(output_pin, LOW);
     Serial.begin(9600);
-    send_device_info();
+//    send_device_info();
 }
 
 void loop() {
-    // if(Serial.available() > 0){ // Checks whether data is comming from the serial port
-    //     state = Serial.read(); // Reads the data from the serial port
-
-    //     if (state == '0'){
-    //         digitalWrite(ledPin, LOW); // Turn LED OFF
-    //         Serial.println("LED: OFF"); // Send back, to the phone, the String "LED: ON"
-    //         state = 0;
-    //     }
-    //     else if (state == '1') {
-    //         digitalWrite(ledPin, HIGH);
-    //         Serial.println("LED: ON");;
-    //         state = 0;
-    //     }
-    // }
+	
+	if (Serial.available() > 0){
+		char inp[] = Serial.read();
+		
+		switch(inp){
+			case "d":
+				send_device_info();
+				break;
+			
+			case "11": // turn on device 1
+				perform_command("11");
+				break;
+			case "10": // turn off device 1
+				perform_command("10");
+				break;
+				
+			case "21": // turn on device 2
+				perform_command("21");
+				break;
+			case "20": // turn off device 2
+				perform_command("20");
+				break;
+			
+			default:
+				printf("Invalid State Entered!\n");
+		}
+	}
 }
