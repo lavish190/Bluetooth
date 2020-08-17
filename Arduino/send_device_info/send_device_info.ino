@@ -1,5 +1,3 @@
-#include<string>
-
 #define output_pin 7
 #define device1_pin 8
 #define device2_pin 13
@@ -43,7 +41,7 @@ void setup() {
 void loop() {
 	
 	if (Serial.available() > 0){
-		string inp;
+		String inp;
 		while(Serial.available() > 0){
 			inp += Serial.read();
 		}
