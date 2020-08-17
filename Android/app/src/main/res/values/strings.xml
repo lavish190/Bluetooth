@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Home Automation</string>
+    <string name="turn_on_bluetooth_to_start_experience">Turn On Bluetooth to start experience.</string>
 </resources>
