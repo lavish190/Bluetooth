@@ -41,7 +41,11 @@ void setup() {
 void loop() {
 	
 	if (Serial.available() > 0){
-		char inp[] = Serial.read();
+		string inp;
+		while(Serial.available() > 0){
+			inp += Serial.read();
+		}
+//		char inp[] = Serial.read();
 		
 		switch(inp){
 			case "d":
