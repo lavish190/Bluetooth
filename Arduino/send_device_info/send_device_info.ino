@@ -11,6 +11,13 @@ void send_device_info(){
 	Serial.println(dev); // one of these lines should work, unable to test
 }
 
+
+/////////////////////////////////////////////////////////////////////
+//      case "11": // turn on device 1
+//      case "10": // turn off device 1
+//      case "21": // turn on device 2
+//      case "20": // turn off device 2 
+/////////////////////////////////////////////////////////////////////
 void perform_command(String inp){
 	char d = inp[0];
 	char c = inp[1];
@@ -43,10 +50,5 @@ void loop() {
 
     if (inp == "d") send_device_info();
     else perform_command(inp);
-    
-//			case "11": // turn on device 1
-//			case "10": // turn off device 1
-//			case "21": // turn on device 2
-//			case "20": // turn off device 2	
 	}
 }
