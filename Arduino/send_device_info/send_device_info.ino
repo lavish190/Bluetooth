@@ -1,5 +1,3 @@
-#include<string>
-
 #define output_pin 7
 #define device1_pin 8
 #define device2_pin 9
@@ -13,10 +11,9 @@ void send_device_info(){
 	Serial.println(dev); // one of these lines should work, unable to test
 }
 
-
-void perform_command(char inp[]){
-	int d = inp[0];
-	int c = inp[1];
+void perform_command(String inp[]){
+	char d = inp[0].c_str();
+	char c = inp[1].c_str();
 	
 	switch(d){
 		case '1': //code for device 1
@@ -41,33 +38,32 @@ void setup() {
 void loop() {
 	
 	if (Serial.available() > 0){
-		string inp;
-		while(Serial.available() > 0){
-			inp += Serial.read();
-		}
-//		char inp[] = Serial.read();
-		
-		switch(inp){
-			case "d":
-				send_device_info();
-				break;
-			
-			case "11": // turn on device 1
-				perform_command("11");
-				break;
-			case "10": // turn off device 1
-				perform_command("10");
-				break;
-				
-			case "21": // turn on device 2
-				perform_command("21");
-				break;
-			case "20": // turn off device 2
-				perform_command("20");
-				break;
-			
-			default:
-				printf("Invalid State Entered!\n");
-		}
+		String inp;
+		while(Serial.available() > 0) inp += Serial.read();
+
+    if (inp == "d") send_device_info();
+   
+//		switch(inp){
+//			case "d":
+//				send_device_info();
+//				break;
+//			
+//			case "11": // turn on device 1
+//				perform_command("11");
+//				break;
+//			case "10": // turn off device 1
+//				perform_command("10");
+//				break;
+//				
+//			case "21": // turn on device 2
+//				perform_command("21");
+//				break;
+//			case "20": // turn off device 2
+//				perform_command("20");
+//				break;
+//			
+//			default:
+//				printf("Invalid State Entered!\n");
+//		}
 	}
 }
