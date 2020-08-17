@@ -5,7 +5,7 @@
 int state = 0;
 
 void send_device_info(){
-    char dev[] = "1:t,2:f"; // we can use this format : "pin_no : device_code"
+    String dev = "1:t,2:f"; // we can use this format : "pin_no : device_code"
     
 //    BTserial.print(dev);
 	Serial.println(dev); // one of these lines should work, unable to test
