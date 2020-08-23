@@ -19,6 +19,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -44,7 +45,26 @@ public class PairedActivity extends AppCompatActivity {
         textView = findViewById(R.id.textView);
         listView = findViewById(R.id.listView);
         bluetooth = BluetoothAdapter.getDefaultAdapter();
+        /*mHandler = new Handler(){
+            public void handleMessage(android.os.Message msg){
+                if(msg.what == MESSAGE_READ){
+                    String readMessage = null;
+                    try {
+                        readMessage = new String((byte[]) msg.obj, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    mReadBuffer.setText(readMessage);
+                }
 
+                if(msg.what == CONNECTING_STATUS){
+                    if(msg.arg1 == 1)
+                        mBluetoothStatus.setText("Connected to Device: " + (String)(msg.obj));
+                    else
+                        mBluetoothStatus.setText("Connection Failed");
+                }
+            }
+        };*/
         ArrayList<String> list = new ArrayList<>();
 
         if(bluetooth.isEnabled()) {
@@ -90,8 +110,8 @@ public class PairedActivity extends AppCompatActivity {
                             try {
                                 fail = true;
                                 mBTSocket.close();
-                                mHandler.obtainMessage(CONNECTING_STATUS, -1, -1)
-                                        .sendToTarget();
+                                Toast.makeText(getBaseContext(), "Connection failed", Toast.LENGTH_SHORT).show();
+                                mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
                             } catch (IOException e2) {
                                 //insert code to deal with this
                                 Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
@@ -100,17 +120,15 @@ public class PairedActivity extends AppCompatActivity {
                         if(!fail) {
                             mConnectedThread = new ConnectedThread(mBTSocket);
                             mConnectedThread.start();
-
-                           // mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name).sendToTarget();
+                            mConnectedThread.write("d");
+                            Intent intent = new Intent(PairedActivity.this,DeviceActivity.class);
+                            startActivity(intent);
+                            mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name).sendToTarget();
                         }
                     }
                 }.start();
             }
         });
-        if(mBTSocket.isConnected()) {
-            Intent intent = new Intent(PairedActivity.this,DeviceActivity.class);
-            startActivity(intent);
-        }
     }
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         return device.createRfcommSocketToServiceRecord(BTMODULEUUID);
