@@ -59,7 +59,7 @@ void loop() {
   if(!power) device();
   if(Serial.available() > 0 && power == true) {
         for(int i=0;Serial.available() > 0;i++) {
-        inp[i] = Serial.read();
+          inp[i] = Serial.read();
       }
       Serial.println(inp[0],inp[1]);
     
