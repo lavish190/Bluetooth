@@ -1,17 +1,11 @@
-#define output_pin 7
+#define output_pin 13
 #define device1_pin 8
 #define device2_pin 9
 
-char inp[]={0,0};
-bool power=false;
-
 void send_device_info(){
-    String dev = "1:t,2:f"; // we can use this format : "pin_no : device_code"
-    
-//    BTserial.print(dev);
-  Serial.println(dev); // one of these lines should work, unable to test
+    String dev = "1:t,2:f"; // we can use this format : "pin_no : device_code";
+  Serial.println(dev); 
 }
-
 
 /////////////////////////////////////////////////////////////////////
 //      case "11": // turn on device 1
@@ -34,35 +28,18 @@ void perform_command(char inp[]){
       break;
   }
 }
-
-void device() {
-  while(!power)
-  {
-    if(Serial.available())
-    {
-      char d=Serial.read();
-      if(d=='d')
-      {
-        send_device_info();
-        power=true;
-      }
-    }
-  }
-}
 void setup() {
-    pinMode(output_pin, OUTPUT);
-    // digitalWrite(output_pin, LOW);
-    Serial.begin(9600);
+  Serial.begin(9600);
+  pinMode(output_pin, OUTPUT);
+  digitalWrite(output_pin, HIGH);   
 }
 
 void loop() {
-  if(!power) device();
-  if(Serial.available() > 0 && power == true) {
-        for(int i=0;Serial.available() > 0;i++) {
-          inp[i] = Serial.read();
-      }
-      Serial.println(inp[0],inp[1]);
-    
-      perform_command(inp);
-    }
+   if(Serial.available())
+   {
+     String in=Serial.readString();
+     if(in=="read_device")
+      send_device_info();
+     
+   }
 }

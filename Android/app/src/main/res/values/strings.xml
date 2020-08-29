@@ -3,4 +3,5 @@
     <string name="turn_on_bluetooth_to_start_experience">Turn On Bluetooth to start experience.</string>
     <string name="title_activity_paired">PairedActivity</string>
     <string name="select_your_room">Select Your Room</string>
+    <string name="loading">loading</string>
 </resources>
