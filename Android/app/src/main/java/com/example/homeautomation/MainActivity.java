@@ -11,6 +11,7 @@ import android.os.SystemClock;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     BluetoothAdapter bluetooth;
     ListView listView;
     TextView textView;
+    GridView grid;
     RelativeLayout relativeLayout;
     String device_name;
     private Handler mHandler; // Our main handler that will receive callback notifications
@@ -75,42 +77,20 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
         listView.setAdapter(adapter);
 
-        mHandler = new Handler(){
-            public void handleMessage(android.os.Message msg){
-                if(msg.what == MESSAGE_READ){
-                    String readMessage = null;
-                    try {
-                        readMessage = new String((byte[]) msg.obj, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-                }
-                textView.setText("Setting Up Remote");
-                if(msg.what == CONNECTING_STATUS){
-                    String bStatus;
-                    if(msg.arg1 == 1)
-                        bStatus="Connected to Device: " + (String)(msg.obj);
-                    else
-                        bStatus="Connection Failed";
-                }
-            }
-        };
-
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 listView.setVisibility(View.GONE);
-                textView.setVisibility(View.VISIBLE);
-                //relativeLayout.setVisibility(View.GONE);
+
                 device_name = (String) listView.getItemAtPosition(position);
                 final String address = device_name.substring(device_name.length() - 17);
                 final String name = device_name.substring(0,device_name.length() - 17);
 
                 textView.setText("Connecting to.. "+ name);
+                textView.setVisibility(View.VISIBLE);
 
                 boolean fail = false;
-
                 BluetoothDevice device = bluetooth.getRemoteDevice(address);
 
                 try {
@@ -136,10 +116,10 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if(!fail) {
                     textView.setText("Getting Devices...");
-                   /* mConnectedThread = new ConnectedThread(mBTSocket);
-                    mConnectedThread.start();
-                    mConnectedThread.write("read_device");*/
-                    mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name).sendToTarget();
+                    mConnectedThread = new ConnectedThread(mBTSocket);
+                    mConnectedThread.write("read_device");
+                    remote(device_list);
+                    relativeLayout.setVisibility(View.GONE);
                 }
             }
         });
@@ -147,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
         System.out.println("2: "+ data + " :2");
     }
 
-    private class ConnectedThread extends Thread {
+    private class ConnectedThread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
@@ -168,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
             mmOutStream = tmpOut;
         }
 
-        public void run() {
+        public void read(String txt) {
             byte[] buffer = new byte[1024];  // buffer store for the stream
             int bytes; // bytes returned from read()
             // Keep listening to the InputStream until an exception occurs
@@ -183,40 +163,41 @@ public class MainActivity extends AppCompatActivity {
                         mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget(); // Send the obtained bytes to the UI activity
                         data = new String(buffer, StandardCharsets.UTF_8);
 
-                        //textView.setText("Setting Up Remote");
+                        textView.setText("Setting Up Remote");
                         int i=0;
                         while(data.charAt(i) != '\n') i++;
 
                         data = data.substring(0, i);
 
-                        ArrayList<ListItem> device_list = new ArrayList<>(); // no of devices supported in arduino
+                        if(txt=="read_device")
+                        {
+                            ArrayList<Devices> device_list = new ArrayList<>(); // no of devices supported in arduino
 
-                        i=0;
-                        while(i < data.length()){
-                            int dev_no = 0;
+                            i=0;
+                            while(i < data.length()) {
+                                int dev_no = 0;
 
-                            while(i < data.length() && Character.isDigit(data.charAt(i))){
-                                dev_no = dev_no*10 + Character.getNumericValue(data.charAt(i));
-                                i++;
+                                while(i < data.length() && Character.isDigit(data.charAt(i))){
+                                    dev_no = dev_no*10 + Character.getNumericValue(data.charAt(i));
+                                    i++;
+                                }
+
+                                i++; // skip :
+
+                                String device_code = "";
+                                while(i < data.length() && Character.isLetter(data.charAt(i))){
+                                    device_code += data.charAt(i);
+                                    i++;
+                                }
+
+                                // create ListItem -->change to android code
+                                Devices device = new Devices(dev_no, device_code);
+                                device_list.add(device);
+
+                                i++; // skip ,
                             }
 
-                            i++; // skip :
-
-                            String device_code = "";
-                            while(i < data.length() && Character.isLetter(data.charAt(i))){
-                                device_code += data.charAt(i);
-                                i++;
-                            }
-
-                            // create ListItem -->change to android code
-                            ListItem device = new ListItem(dev_no, device_code);
-                            device_list.add(device);
-
-                            i++; // skip ,
                         }
-
-
-
                         break;
                     }
                 } catch (IOException e) {
@@ -233,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 mmOutStream.write(bytes);
             } catch (IOException e) { }
+            read(input);
         }
         /* Call this from the main activity to shutdown the connection */
         public void cancel() {
@@ -247,15 +229,32 @@ public class MainActivity extends AppCompatActivity {
         //creates secure outgoing connection with BT device using UUID
     }
 
+
+    public void remote(final ArrayList<Devices> device_list) {
+        com.example.homeautomation.CustomGrid adapter = new com.example.homeautomation.CustomGrid(MainActivity.this, device_list);
+        grid=(GridView)findViewById(R.id.grid);
+        grid.setAdapter(adapter);
+        grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Toast.makeText(MainActivity.this, "You Clicked at " +grid.getItemAtPosition(position), Toast.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+
     private void showToast(String msg) {
         Toast.makeText(this,msg,Toast.LENGTH_SHORT).show();
     }
-    class ListItem{
+
+
+    class Devices{
         public int dev_no;
         public String name;
         public int status; // on, off, etc
 
-        ListItem(int p_no, String n){
+        Devices(int p_no, String n){
             this.dev_no = p_no;
             if (n.equals("t")) this.name = "Tubelight";
             else if (n.equals("f")) this.name = "Fan";
