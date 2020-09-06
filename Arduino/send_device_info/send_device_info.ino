@@ -39,7 +39,6 @@ void loop() {
    {
      String in=Serial.readString();
      if(in=="read_device")
-      send_device_info();
-     
+      send_device_info();   
    }
 }

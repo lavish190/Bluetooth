@@ -10,10 +10,10 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class CustomGrid extends BaseAdapter{
-    private final ArrayList<MainActivity.Devices> devices;
+    private final ArrayList<Devices> devices;
     private final Context mContext;
 
-    public CustomGrid(Context mContext, ArrayList<MainActivity.Devices> devices) {
+    public CustomGrid(Context mContext, ArrayList<Devices> devices) {
         this.mContext = mContext;
         this.devices = devices;
     }

@@ -7,7 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -18,10 +18,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -29,8 +25,6 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
-
-    String data;
 
     BluetoothAdapter bluetooth;
     ListView listView;
@@ -53,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         bluetooth = BluetoothAdapter.getDefaultAdapter();
         if(bluetooth==null) {
-            showToast("Device incompatible");
+            Toast.makeText(this,"Device incompatible",Toast.LENGTH_SHORT).show();
         }
 
         ArrayList<String> list = new ArrayList<>();
@@ -63,8 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
 
         if(!bluetooth.isEnabled()) {
-            showToast("Turning On Bluetooth");
-            Intent in = new Intent(bluetooth.ACTION_REQUEST_ENABLE);
+            Toast.makeText(this,"Turning On Bluetooth",Toast.LENGTH_SHORT).show();
+            Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(in, REQUEST_ENABLE_BT);
         }
         else
@@ -90,138 +84,46 @@ public class MainActivity extends AppCompatActivity {
                 textView.setText("Connecting to.. "+ name);
                 textView.setVisibility(View.VISIBLE);
 
-                boolean fail = false;
-                BluetoothDevice device = bluetooth.getRemoteDevice(address);
+                new Thread() {
+                    public void run() {
 
-                try {
-                    mBTSocket = createBluetoothSocket(device);
-                } catch (IOException e) {
-                    fail = true;
-                    Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
-                }
-                // Establish the Bluetooth socket connection.
-                try {
-                    mBTSocket.connect();
-                } catch (IOException e) {
-                    try {
-                        fail = true;
-                        mBTSocket.close();
-                        Toast.makeText(getBaseContext(), "Connection failed", Toast.LENGTH_SHORT).show();
+                        boolean fail = false;
+                        BluetoothDevice device = bluetooth.getRemoteDevice(address);
 
-                        mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
-                    } catch (IOException e2) {
-                        //insert code to deal with this
-                        Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                        try {
+                            mBTSocket = createBluetoothSocket(device);
+                        } catch (IOException e) {
+                            fail = true;
+                            Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                        }
+                        // Establish the Bluetooth socket connection.
+                        try {
+                            mBTSocket.connect();
+                        } catch (IOException e) {
+                            try {
+                                fail = true;
+                                mBTSocket.close();
+                                Toast.makeText(getBaseContext(), "Connection failed", Toast.LENGTH_SHORT).show();
+
+                                mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
+                            } catch (IOException e2) {
+                                //insert code to deal with this
+                                Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        if (!fail) {
+                            //textView.setText("Getting Devices...");
+                            System.out.println(mBTSocket.isConnected());
+                            mConnectedThread = new ConnectedThread(mBTSocket);
+                            mConnectedThread.start();
+                            mConnectedThread.write("read_device");
+//                            relativeLayout.setVisibility(View.GONE);
+                        }
                     }
-                }
-                if(!fail) {
-                    textView.setText("Getting Devices...");
-                    mConnectedThread = new ConnectedThread(mBTSocket);
-                    mConnectedThread.write("read_device");
-                    remote(device_list);
-                    relativeLayout.setVisibility(View.GONE);
-                }
+                }.start();
             }
         });
-
-        System.out.println("2: "+ data + " :2");
-    }
-
-    private class ConnectedThread {
-        private final BluetoothSocket mmSocket;
-        private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
-
-        public ConnectedThread(BluetoothSocket socket) {
-            mmSocket = socket;
-            InputStream tmpIn = null;
-            OutputStream tmpOut = null;
-
-            // Get the input and output streams, using temp objects because
-            // member streams are final
-            try {
-                tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
-            } catch (IOException e) { }
-
-            mmInStream = tmpIn;
-            mmOutStream = tmpOut;
-        }
-
-        public void read(String txt) {
-            byte[] buffer = new byte[1024];  // buffer store for the stream
-            int bytes; // bytes returned from read()
-            // Keep listening to the InputStream until an exception occurs
-            while (true) {
-                try {
-                    // Read from the InputStream
-                    bytes = mmInStream.available();
-                    if(bytes != 0) {
-                        SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
-                        bytes = mmInStream.available(); // how many bytes are ready to be read?
-                        bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
-                        mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget(); // Send the obtained bytes to the UI activity
-                        data = new String(buffer, StandardCharsets.UTF_8);
-
-                        textView.setText("Setting Up Remote");
-                        int i=0;
-                        while(data.charAt(i) != '\n') i++;
-
-                        data = data.substring(0, i);
-
-                        if(txt=="read_device")
-                        {
-                            ArrayList<Devices> device_list = new ArrayList<>(); // no of devices supported in arduino
-
-                            i=0;
-                            while(i < data.length()) {
-                                int dev_no = 0;
-
-                                while(i < data.length() && Character.isDigit(data.charAt(i))){
-                                    dev_no = dev_no*10 + Character.getNumericValue(data.charAt(i));
-                                    i++;
-                                }
-
-                                i++; // skip :
-
-                                String device_code = "";
-                                while(i < data.length() && Character.isLetter(data.charAt(i))){
-                                    device_code += data.charAt(i);
-                                    i++;
-                                }
-
-                                // create ListItem -->change to android code
-                                Devices device = new Devices(dev_no, device_code);
-                                device_list.add(device);
-
-                                i++; // skip ,
-                            }
-
-                        }
-                        break;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-
-                    break;
-                }
-            }
-        }
-
-        /* Call this from the main activity to send data to the remote device */
-        public void write(String input) {
-            byte[] bytes = input.getBytes();           //converts entered String into bytes
-            try {
-                mmOutStream.write(bytes);
-            } catch (IOException e) { }
-            read(input);
-        }
-        /* Call this from the main activity to shutdown the connection */
-        public void cancel() {
-            try {
-                mmSocket.close();
-            } catch (IOException e) { }
-        }
+        System.out.println("test");
     }
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
@@ -231,38 +133,15 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void remote(final ArrayList<Devices> device_list) {
-        com.example.homeautomation.CustomGrid adapter = new com.example.homeautomation.CustomGrid(MainActivity.this, device_list);
-        grid=(GridView)findViewById(R.id.grid);
+        CustomGrid adapter = new CustomGrid(MainActivity.this, device_list);
+        //grid=(GridView)findViewById(R.id.grid);
         grid.setAdapter(adapter);
         grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MainActivity.this, "You Clicked at " +grid.getItemAtPosition(position), Toast.LENGTH_SHORT).show();
-
+                Toast.makeText(MainActivity.this, "You Clicked at " +grid.getItemAtPosition(position).toString(), Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private void showToast(String msg) {
-        Toast.makeText(this,msg,Toast.LENGTH_SHORT).show();
-    }
-
-
-    class Devices{
-        public int dev_no;
-        public String name;
-        public int status; // on, off, etc
-
-        Devices(int p_no, String n){
-            this.dev_no = p_no;
-            if (n.equals("t")) this.name = "Tubelight";
-            else if (n.equals("f")) this.name = "Fan";
-            this.status = 0;
-
-            System.out.println(this.dev_no);
-            System.out.println(this.name);
-            System.out.println(this.status);
-        }
     }
 }

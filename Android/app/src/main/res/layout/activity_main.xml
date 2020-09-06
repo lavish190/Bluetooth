@@ -17,7 +17,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-
         <ListView
             android:id="@+id/listView"
             android:layout_width="316dp"
@@ -54,12 +53,6 @@
 
     </RelativeLayout>
 
-    <GridView
-        android:id="@+id/grid"
-        android:numColumns="auto_fit"
-        android:columnWidth="100dp"
-        android:stretchMode="columnWidth"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
