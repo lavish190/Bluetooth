@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                             mBTSocket = createBluetoothSocket(device);
                         } catch (IOException e) {
                             fail = true;
-                            Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
                         }
                         // Establish the Bluetooth socket connection.
                         try {
@@ -103,12 +103,12 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 fail = true;
                                 mBTSocket.close();
-                                Toast.makeText(getBaseContext(), "Connection failed", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "Connection failed", Toast.LENGTH_SHORT).show();
 
                                 mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
                             } catch (IOException e2) {
                                 //insert code to deal with this
-                                Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
                             }
                         }
                         if (!fail) {
@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void remote(final ArrayList<Devices> device_list) {
+   public void remote(final ArrayList<Devices> device_list) {
         CustomGrid adapter = new CustomGrid(MainActivity.this, device_list);
         //grid=(GridView)findViewById(R.id.grid);
         grid.setAdapter(adapter);

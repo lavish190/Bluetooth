@@ -76,7 +76,7 @@ class ConnectedThread extends Thread {
 
                         i++; // skip ,
                     }
-                    // remote(device_list);
+                    //remote(device_list);
                 }
 
             } catch (IOException e) {
