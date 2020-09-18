@@ -6,8 +6,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -32,19 +30,20 @@ public class MainActivity extends AppCompatActivity {
     GridView grid;
     RelativeLayout relativeLayout;
     String device_name;
-    private Handler mHandler; // Our main handler that will receive callback notifications
+    static ActivityHandler mHandler; // Our main handler that will receive callback notifications
     private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
-    private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
-    private final static int CONNECTING_STATUS = 3;
+    public final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
+    public final static int CONNECTING_STATUS = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mHandler = new ActivityHandler();
         bluetooth = BluetoothAdapter.getDefaultAdapter();
         if(bluetooth==null) {
             Toast.makeText(this,"Device incompatible",Toast.LENGTH_SHORT).show();
@@ -103,12 +102,13 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 fail = true;
                                 mBTSocket.close();
-                                Toast.makeText(getApplicationContext(), "Connection failed", Toast.LENGTH_SHORT).show();
+                                mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
+                                //Toast.makeText(getApplicationContext(), "Connection failed", Toast.LENGTH_SHORT).show();
 
                                 mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
                             } catch (IOException e2) {
                                 //insert code to deal with this
-                                Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
                             }
                         }
                         if (!fail) {
@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
                             mConnectedThread = new ConnectedThread(mBTSocket);
                             mConnectedThread.start();
                             mConnectedThread.write("read_device");
+                            mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name).sendToTarget();
 //                            relativeLayout.setVisibility(View.GONE);
                         }
                     }

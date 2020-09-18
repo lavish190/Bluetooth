@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
+import static com.example.homeautomation.MainActivity.MESSAGE_READ;
+
 class ConnectedThread extends Thread {
     private final BluetoothSocket mmSocket;
     private final InputStream mmInStream;
@@ -43,17 +45,16 @@ class ConnectedThread extends Thread {
                     bytes = mmInStream.available(); // how many bytes are ready to be read?
                     bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
 
-                    String data = new String(buffer, StandardCharsets.UTF_8);
+                    System.out.println("reached till connected thread");
 
-                    int i = 0;
-                    while (data.charAt(i) != '\n') i++;
-
-                    data = data.substring(0, i);
+                    MainActivity.mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
 
 
+
+/*
                     ArrayList<Devices> device_list = new ArrayList<>(); // no of devices supported in arduino
 
-                    i = 0;
+                    int i = 0;
                     while (i < data.length()) {
                         int dev_no = 0;
 
@@ -76,7 +77,7 @@ class ConnectedThread extends Thread {
 
                         i++; // skip ,
                     }
-                    //remote(device_list);
+                    //remote(device_list);*/
                 }
 
             } catch (IOException e) {
