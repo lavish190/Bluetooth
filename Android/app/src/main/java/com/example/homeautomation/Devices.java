@@ -11,4 +11,10 @@ class Devices{
         else if (n.equals("f")) this.name = "Fan";
         this.status = 0;
     }
+
+    public void printDevices () {
+        System.out.println(this.dev_no);
+        System.out.println(this.name);
+        System.out.println(this.status);
+    }
 }

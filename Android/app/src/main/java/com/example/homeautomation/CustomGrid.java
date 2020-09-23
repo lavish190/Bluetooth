@@ -1,26 +1,32 @@
 package com.example.homeautomation;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
-
 import java.util.ArrayList;
 
 public class CustomGrid extends BaseAdapter{
+    private static final String TAG = "CustomGrid";
     private final ArrayList<Devices> devices;
     private final Context mContext;
 
     public CustomGrid(Context mContext, ArrayList<Devices> devices) {
         this.mContext = mContext;
         this.devices = devices;
+
+        Log.d(TAG, "CustomGrid: ");
+        for (Devices device : devices) device.printDevices();
     }
 
     @Override
     public int getCount() {
-        return 0;
+        return devices.size();
     }
 
     @Override
@@ -35,19 +41,21 @@ public class CustomGrid extends BaseAdapter{
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View grid;
-        LayoutInflater inflater = (LayoutInflater) mContext
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         if (convertView == null) {
+            View grid = inflater.inflate(R.layout.grid_single, null);
 
-            grid = new View(mContext);
-            grid = inflater.inflate(R.layout.grid_single, null);
+            ImageView imageGrid = (ImageView) grid.findViewById(R.id.grid_image);
             TextView textView = (TextView) grid.findViewById(R.id.grid_text);
+
+            if(devices.get(position).name=="Tubelight") {
+                imageGrid.setImageResource(R.drawable.tubelight);
+            }
             textView.setText(devices.get(position).name);
+
+            return grid;
         }
-        else
-            grid = (View) convertView;
-        return grid;
+        else return convertView;
     }
 }

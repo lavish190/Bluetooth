@@ -4,31 +4,53 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:visibility="visible"
     tools:context=".MainActivity">
+
+    <GridView
+        android:id="@+id/grid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:columnWidth="100dp"
+        android:gravity="center"
+        android:layout_margin="20dp"
+        android:numColumns="2"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:horizontalSpacing="20dp"
+        android:verticalSpacing="20dp"/>
 
     <RelativeLayout
         android:id="@+id/relativeLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@drawable/splash"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.55"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0">
 
         <ListView
             android:id="@+id/listView"
-            android:layout_width="316dp"
-            android:layout_height="501dp"
+            android:layout_width="match_parent"
+            android:layout_height="257dp"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="50dp"
-            android:layout_marginTop="103dp"
-            android:layout_marginEnd="45dp"
-            android:layout_marginBottom="127dp"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="451dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginBottom="11dp"
+            android:background="@color/colorPrimary"
             android:visibility="visible"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -37,21 +59,22 @@
 
         <TextView
             android:id="@+id/textView"
-            android:layout_width="145dp"
-            android:layout_height="130dp"
+            android:layout_width="wrap_content"
+            android:layout_height="86dp"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="122dp"
-            android:layout_marginTop="289dp"
-            android:layout_marginEnd="143dp"
-            android:layout_marginBottom="312dp"
+            android:layout_marginStart="70dp"
+            android:layout_marginTop="421dp"
+            android:layout_marginEnd="70dp"
+            android:layout_marginBottom="212dp"
+            android:gravity="center"
             android:text="@string/loading"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="@color/orange"
             android:visibility="gone" />
 
     </RelativeLayout>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

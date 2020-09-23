@@ -1,6 +1,5 @@
-#define output_pin 13
-#define device1_pin 8
-#define device2_pin 9
+#define device1_pin 13
+#define device2_pin 8
 
 void send_device_info(){
     String dev = "1:t,2:f"; // we can use this format : "pin_no : device_code";
@@ -13,9 +12,9 @@ void send_device_info(){
 //      case "21": // turn on device 2
 //      case "20": // turn off device 2 
 /////////////////////////////////////////////////////////////////////
-void perform_command(char inp[]){
-  char d = inp[0];
-  char c = inp[1];
+void perform_command(String inp){
+  char d = inp.charAt(0);
+  char c = inp.charAt(1);
   
   switch(d){
     case '1': //code for device 1
@@ -30,8 +29,7 @@ void perform_command(char inp[]){
 }
 void setup() {
   Serial.begin(9600);
-  pinMode(output_pin, OUTPUT);
-  digitalWrite(output_pin, HIGH);   
+  pinMode(13,OUTPUT);
 }
 
 void loop() {
@@ -40,5 +38,7 @@ void loop() {
      String in=Serial.readString();
      if(in=="read_device")
       send_device_info();   
+     else
+      perform_command(in);
    }
 }

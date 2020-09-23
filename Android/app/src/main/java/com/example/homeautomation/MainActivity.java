@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -16,6 +17,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -26,12 +29,12 @@ public class MainActivity extends AppCompatActivity {
 
     BluetoothAdapter bluetooth;
     ListView listView;
-    TextView textView;
-    GridView grid;
-    RelativeLayout relativeLayout;
+    static TextView textView;
+    static GridView grid;
+    static RelativeLayout relativeLayout;
     String device_name;
-    static ActivityHandler mHandler; // Our main handler that will receive callback notifications
-    private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
+    ActivityHandler mHandler; // Our main handler that will receive callback notifications
+    public static ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
@@ -43,14 +46,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mHandler = new ActivityHandler();
+        mHandler = new ActivityHandler(this);
         bluetooth = BluetoothAdapter.getDefaultAdapter();
         if(bluetooth==null) {
             Toast.makeText(this,"Device incompatible",Toast.LENGTH_SHORT).show();
         }
 
+        setTitle("Select Your Room");
         ArrayList<String> list = new ArrayList<>();
         listView = findViewById(R.id.listView);
+        grid = findViewById(R.id.grid);
         textView = findViewById(R.id.textView);
         relativeLayout = findViewById(R.id.relativeLayout);
 
@@ -60,13 +65,13 @@ public class MainActivity extends AppCompatActivity {
             Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(in, REQUEST_ENABLE_BT);
         }
-        else
-        {
+        else {
             Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
-            for(BluetoothDevice device:devices) {
-                list.add(device.getName()+"\n"+device.getAddress());
+            for (BluetoothDevice device : devices) {
+                list.add(device.getName() + "\n" + device.getAddress());
             }
         }
+
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
         listView.setAdapter(adapter);
 
@@ -93,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                             mBTSocket = createBluetoothSocket(device);
                         } catch (IOException e) {
                             fail = true;
-                            Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
                         }
                         // Establish the Bluetooth socket connection.
                         try {
@@ -103,6 +108,8 @@ public class MainActivity extends AppCompatActivity {
                                 fail = true;
                                 mBTSocket.close();
                                 mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
+                                Intent intent = new Intent(MainActivity.this,MainActivity.class);
+                                startActivity(intent);
                                 //Toast.makeText(getApplicationContext(), "Connection failed", Toast.LENGTH_SHORT).show();
 
                                 mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
@@ -112,19 +119,17 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                         if (!fail) {
-                            //textView.setText("Getting Devices...");
                             System.out.println(mBTSocket.isConnected());
                             mConnectedThread = new ConnectedThread(mBTSocket);
                             mConnectedThread.start();
                             mConnectedThread.write("read_device");
                             mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name).sendToTarget();
-//                            relativeLayout.setVisibility(View.GONE);
+                            setTitle(name);
                         }
                     }
                 }.start();
             }
         });
-        System.out.println("test");
     }
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
@@ -132,17 +137,65 @@ public class MainActivity extends AppCompatActivity {
         //creates secure outgoing connection with BT device using UUID
     }
 
+    class ConnectedThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
 
-   public void remote(final ArrayList<Devices> device_list) {
-        CustomGrid adapter = new CustomGrid(MainActivity.this, device_list);
-        //grid=(GridView)findViewById(R.id.grid);
-        grid.setAdapter(adapter);
-        grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        public ConnectedThread(BluetoothSocket socket) {
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
 
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MainActivity.this, "You Clicked at " +grid.getItemAtPosition(position).toString(), Toast.LENGTH_SHORT).show();
+            // Get the input and output streams, using temp objects because
+            // member streams are final
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) { }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+        @Override
+        public void run() {
+            byte[] buffer = new byte[1024];  // buffer store for the stream
+            int bytes; // bytes returned from read()
+            // Keep listening to the InputStream until an exception occurs
+            while (true) {
+                try {
+                    // Read from the InputStream
+                    bytes = mmInStream.available();
+                    if (bytes != 0) {
+                        SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
+                        bytes = mmInStream.available(); // how many bytes are ready to be read?
+                        bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
+
+                        System.out.println("reached till connected thread");
+
+                        mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+
+                    break;
+                }
             }
-        });
+        }
+
+        /* Call this from the main activity to send data to the remote device */
+        public void write(String input) {
+            byte[] bytes = input.getBytes();           //converts entered String into bytes
+            try {
+                mmOutStream.write(bytes);
+            } catch (IOException e) { }
+        }
+        /* Call this from the main activity to shutdown the connection */
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
     }
 }
