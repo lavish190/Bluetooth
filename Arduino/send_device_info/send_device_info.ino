@@ -1,44 +1,32 @@
-#define device1_pin 13
-#define device2_pin 8
+int dev_no[] = {13,12};                       //keep adding device pin number corrosponding to the device name
+String name[] = {"tubelight","fan"};          //keep adding device name corrosponding to the device pin number
 
-void send_device_info(){
-    String dev = "1:t,2:f"; // we can use this format : "pin_no : device_code";
-  Serial.println(dev); 
+void send_device_info() {                     //we can use this format : "dev_no : device_code"
+  String device_info;
+  for(int i=0;i<(sizeof(dev_no)/sizeof(dev_no[0]));i++) {
+    device_info.concat(String(i));
+    device_info.concat(':');
+    device_info.concat(name[i].charAt(0));
+    device_info.concat(',');
+  }             
+  Serial.println(device_info); 
 }
 
-/////////////////////////////////////////////////////////////////////
-//      case "11": // turn on device 1
-//      case "10": // turn off device 1
-//      case "21": // turn on device 2
-//      case "20": // turn off device 2 
-/////////////////////////////////////////////////////////////////////
-void perform_command(String inp){
-  char d = inp.charAt(0);
-  char c = inp.charAt(1);
-  
-  switch(d){
-    case '1': //code for device 1
-      if (c == '1') digitalWrite(device1_pin, HIGH);
-      else digitalWrite(device1_pin, LOW);
-      break;
-    case '2': //code for device 2
-      if (c == '1') digitalWrite(device2_pin, HIGH);
-      else digitalWrite(device2_pin, LOW);
-      break;
-  }
+void perform_command(String inp) {            //this format will be recieved : "dev_no : status"
+  String dev = inp.substring(0,inp.indexOf(':'));
+  char c = inp.charAt(inp.length()-1);
+  digitalWrite(dev_no[dev.toInt()], c-'0');
 }
+
 void setup() {
   Serial.begin(9600);
-  pinMode(13,OUTPUT);
+  for(int i=0;i<(sizeof(dev_no)/sizeof(dev_no[0]));i++) pinMode(dev_no[i],OUTPUT);
 }
 
 void loop() {
-   if(Serial.available())
-   {
+   if(Serial.available()) {
      String in=Serial.readString();
-     if(in=="read_device")
-      send_device_info();   
-     else
-      perform_command(in);
+     if(in=="read_device") send_device_info();   
+     else perform_command(in);
    }
 }

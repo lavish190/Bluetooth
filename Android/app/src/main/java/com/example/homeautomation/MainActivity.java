@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -25,11 +26,12 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity";
     private static final int REQUEST_ENABLE_BT = 1;
 
     BluetoothAdapter bluetooth;
     ListView listView;
-    static TextView textView;
+    TextView textView;
     static GridView grid;
     static RelativeLayout relativeLayout;
     String device_name;
@@ -39,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
     public final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
-    public final static int CONNECTING_STATUS = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,7 +99,12 @@ public class MainActivity extends AppCompatActivity {
                             mBTSocket = createBluetoothSocket(device);
                         } catch (IOException e) {
                             fail = true;
-                            //Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                            runOnUiThread(new Runnable(){
+                                public void run() {
+                                    Log.e(TAG, "handleMessage: Socket Creation Failed");
+                                    textView.setText("Socket Creation Failed: Your Device might not support Bluetooth");
+                                }
+                            });
                         }
                         // Establish the Bluetooth socket connection.
                         try {
@@ -107,24 +113,35 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 fail = true;
                                 mBTSocket.close();
-                                mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
+                                runOnUiThread(new Runnable(){
+                                    public void run() {
+                                        Log.e(TAG, "handleMessage: Connection Failed");
+                                        textView.setText("Connection Failed");
+                                    }
+                                });
                                 Intent intent = new Intent(MainActivity.this,MainActivity.class);
                                 startActivity(intent);
-                                //Toast.makeText(getApplicationContext(), "Connection failed", Toast.LENGTH_SHORT).show();
-
-                                mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
                             } catch (IOException e2) {
-                                //insert code to deal with this
-                                //Toast.makeText(getApplicationContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
+                                runOnUiThread(new Runnable(){
+                                    public void run() {
+                                        Log.e(TAG, "handleMessage: Socket Creation Failed");
+                                        textView.setText("Socket Creation Failed: Your Device might not support Bluetooth");
+                                    }
+                                });
                             }
                         }
                         if (!fail) {
                             System.out.println(mBTSocket.isConnected());
+                            runOnUiThread(new Runnable(){
+                                public void run() {
+                                    Log.d(TAG, "handleMessage: Connected to Device: " + name );
+                                    textView.setText("Connected to " + name);
+                                    setTitle(name);
+                                }
+                            });
                             mConnectedThread = new ConnectedThread(mBTSocket);
                             mConnectedThread.start();
                             mConnectedThread.write("read_device");
-                            mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name).sendToTarget();
-                            setTitle(name);
                         }
                     }
                 }.start();

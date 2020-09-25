@@ -6,19 +6,22 @@ import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ImageView;
+
 import androidx.annotation.NonNull;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.example.homeautomation.MainActivity.CONNECTING_STATUS;
 import static com.example.homeautomation.MainActivity.MESSAGE_READ;
 import static com.example.homeautomation.MainActivity.grid;
 import static com.example.homeautomation.MainActivity.mConnectedThread;
 import static com.example.homeautomation.MainActivity.relativeLayout;
-import static com.example.homeautomation.MainActivity.textView;
 
 public class ActivityHandler extends Handler {
     private static final String TAG = "ActivityHandler";
+    //ImageView imageGrid = (ImageView) grid.findViewById(R.id.grid_image);
     private Context context;
     public ActivityHandler(Context context) {
         this.context=context;
@@ -34,31 +37,21 @@ public class ActivityHandler extends Handler {
             while (data.charAt(i) != '\n') i++;
 
             data = data.substring(0, i);
-            Log.e(TAG, "handleMessage: " + data);
+            Log.d(TAG, "handleMessage:" + data + "length:" +data.length());
 
-            if(data.contains(":")) getDevices(data);
-        }
+            Pattern pattern = Pattern.compile("(\\d:[a-zA-Z],)*$");
+            Matcher matcher = pattern.matcher(data);
 
-        if(msg.what == CONNECTING_STATUS){
-            if(msg.arg1 == 1) {
-                Log.e(TAG, "handleMessage: Connected to Device: " + (String) (msg.obj));
-                textView.setText("Connected to " + (String) (msg.obj));
-            }
-            else {
-                Log.e(TAG, "handleMessage: Connection Failed");
-                textView.setText("Connection Failed");
-            }
+            if(matcher.matches()) getDevices(data);
         }
     }
 
     private void getDevices(String data) {
-        textView.setText("Getting Devices...");
         final ArrayList<Devices> device_list = new ArrayList<>(); // no of devices supported in arduino
 
         int i = 0;
-        while (i < data.length()) {
+        while (i < data.length()-1) {
             int dev_no = 0;
-
             while (i < data.length() && Character.isDigit(data.charAt(i))) {
                 dev_no = dev_no * 10 + Character.getNumericValue(data.charAt(i));
                 i++;
@@ -86,7 +79,8 @@ public class ActivityHandler extends Handler {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Devices dev = device_list.get(position);
                 if(dev.status==1) dev.status=0; else dev.status=1;
-                String  control = Integer.toString(dev.dev_no*10 + dev.status);
+               // if(dev.name=="Fan") if(dev.status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
+                String  control = dev.dev_no + ":" + dev.status;
                 System.out.println(control);
                 mConnectedThread.write(control);
             }
