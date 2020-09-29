@@ -17,7 +17,7 @@
         android:layout_gravity="center"
         android:background="#00FFFFFF"
         android:contentDescription="@string/todo"
-        app:srcCompat="@drawable/ic_launcher_foreground" />
+        app:srcCompat="@drawable/ic_launcher" />
 
     <TextView
         android:id="@+id/grid_text"
