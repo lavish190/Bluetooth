@@ -1,5 +1,6 @@
-int dev_no[] = {13,12};                       //keep adding device pin number corrosponding to the device name
-String name[] = {"tubelight","fan"};          //keep adding device name corrosponding to the device pin number
+int dev_no[] = {13,12,11,10,9,8};                       //keep adding device pin number corrosponding to the device name
+String name[] = {"tubelight","fan","cfl","lamp","socket","bulb"};          //keep adding device name corrosponding to the device pin number
+bool status[sizeof(dev_no)/sizeof(dev_no[0])];
 
 void send_device_info() {                     //we can use this format : "dev_no : device_code"
   String device_info;
@@ -7,6 +8,8 @@ void send_device_info() {                     //we can use this format : "dev_no
     device_info.concat(String(i));
     device_info.concat(':');
     device_info.concat(name[i].charAt(0));
+    device_info.concat(':');
+    device_info.concat(String(status[i]));
     device_info.concat(',');
   }             
   Serial.println(device_info); 
@@ -16,6 +19,7 @@ void perform_command(String inp) {            //this format will be recieved : "
   String dev = inp.substring(0,inp.indexOf(':'));
   char c = inp.charAt(inp.length()-1);
   digitalWrite(dev_no[dev.toInt()], c-'0');
+  status[dev.toInt()] = c-'0';
 }
 
 void setup() {

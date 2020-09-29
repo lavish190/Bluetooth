@@ -48,9 +48,19 @@ public class CustomGrid extends BaseAdapter{
             TextView textView = (TextView) grid.findViewById(R.id.grid_text);
 
             if(devices.get(position).name=="Tubelight")
-                    imageGrid.setImageResource(R.drawable.tubelight);
+                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.tubelight_on); else imageGrid.setImageResource(R.drawable.tubelight_off);
             if(devices.get(position).name=="Fan")
-                    if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
+                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
+            if(devices.get(position).name=="Socket")
+                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.socket_on); else imageGrid.setImageResource(R.drawable.socket_off);
+            if(devices.get(position).name=="Lamp")
+                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.lamp_on); else imageGrid.setImageResource(R.drawable.lamp_off);
+            if(devices.get(position).name=="CFL")
+                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.cfl_on); else imageGrid.setImageResource(R.drawable.cfl_off);
+            if(devices.get(position).name=="Ceiling light")
+                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.ceiling_light_on); else imageGrid.setImageResource(R.drawable.ceiling_light_off);
+            if(devices.get(position).name=="Bulb")
+                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.bulb_on); else imageGrid.setImageResource(R.drawable.bulb_off);
 
             textView.setText(devices.get(position).name);
 

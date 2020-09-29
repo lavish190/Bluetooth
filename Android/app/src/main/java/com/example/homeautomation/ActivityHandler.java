@@ -11,7 +11,6 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.example.homeautomation.MainActivity.MESSAGE_READ;
@@ -21,7 +20,7 @@ import static com.example.homeautomation.MainActivity.relativeLayout;
 
 public class ActivityHandler extends Handler {
     private static final String TAG = "ActivityHandler";
-    //ImageView imageGrid = (ImageView) grid.findViewById(R.id.grid_image);
+    ImageView imageGrid;
     private Context context;
     public ActivityHandler(Context context) {
         this.context=context;
@@ -36,13 +35,10 @@ public class ActivityHandler extends Handler {
             int i = 0;
             while (data.charAt(i) != '\n') i++;
 
-            data = data.substring(0, i);
-            Log.d(TAG, "handleMessage:" + data + "length:" +data.length());
+            data = data.substring(0, i-1);
+            Log.d(TAG, "handleMessage:  " + data + "  length: " +data.length());
 
-            Pattern pattern = Pattern.compile("(\\d:[a-zA-Z],)*$");
-            Matcher matcher = pattern.matcher(data);
-
-            if(matcher.matches()) getDevices(data);
+            if(Pattern.matches("(\\d:[a-zA-Z]:\\d,)*$",data)) getDevices(data);
         }
     }
 
@@ -65,8 +61,16 @@ public class ActivityHandler extends Handler {
                 i++;
             }
 
+            i++; // skip :
+
+            int status = 0;
+            while (i < data.length() && Character.isDigit(data.charAt(i))) {
+                status = status * 10 + Character.getNumericValue(data.charAt(i));
+                i++;
+            }
+
             // create ListItem -->change to android code
-            Devices device = new Devices(dev_no, device_code);
+            Devices device = new Devices(dev_no, device_code,status);
             device_list.add(device);
 
             i++; // skip ,
@@ -77,12 +81,19 @@ public class ActivityHandler extends Handler {
         grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                imageGrid = (ImageView) view.findViewById(R.id.grid_image);
                 Devices dev = device_list.get(position);
                 if(dev.status==1) dev.status=0; else dev.status=1;
-               // if(dev.name=="Fan") if(dev.status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
                 String  control = dev.dev_no + ":" + dev.status;
                 System.out.println(control);
                 mConnectedThread.write(control);
+                if(dev.name=="Tubelight") if(dev.status==1) imageGrid.setImageResource(R.drawable.tubelight_on); else imageGrid.setImageResource(R.drawable.tubelight_off);
+                if(dev.name=="Fan") if(dev.status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
+                if(dev.name=="Socket") if(dev.status==1) imageGrid.setImageResource(R.drawable.socket_on); else imageGrid.setImageResource(R.drawable.socket_off);
+                if(dev.name=="Lamp") if(dev.status==1) imageGrid.setImageResource(R.drawable.lamp_on); else imageGrid.setImageResource(R.drawable.lamp_off);
+                if(dev.name=="CFL") if(dev.status==1) imageGrid.setImageResource(R.drawable.cfl_on); else imageGrid.setImageResource(R.drawable.cfl_off);
+                if(dev.name=="Ceiling light") if(dev.status==1) imageGrid.setImageResource(R.drawable.ceiling_light_on); else imageGrid.setImageResource(R.drawable.ceiling_light_off);
+                if(dev.name=="Bulb") if(dev.status==1) imageGrid.setImageResource(R.drawable.bulb_on); else imageGrid.setImageResource(R.drawable.bulb_off);
             }
         });
 
