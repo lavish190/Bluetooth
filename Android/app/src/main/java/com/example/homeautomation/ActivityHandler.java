@@ -83,7 +83,13 @@ public class ActivityHandler extends Handler {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 imageGrid = (ImageView) view.findViewById(R.id.grid_image);
                 Devices dev = device_list.get(position);
-                if(dev.status==1) dev.status=0; else dev.status=1;
+                if(dev.status==1) {
+                    dev.status=0;
+                    view.setBackgroundResource(R.drawable.round);
+                } else {
+                    dev.status=1;
+                    view.setBackgroundResource(R.drawable.round_orange);
+                }
                 String  control = dev.dev_no + ":" + dev.status;
                 System.out.println(control);
                 mConnectedThread.write(control);
