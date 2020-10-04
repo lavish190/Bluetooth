@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -20,9 +21,11 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,22 +35,21 @@ public class MainActivity extends AppCompatActivity {
     BluetoothAdapter bluetooth;
     ListView listView;
     TextView textView;
-    static GridView grid;
-    static RelativeLayout relativeLayout;
+    ImageView imageGrid;
+    TextView textGrid;
+    GridView grid;
+    RelativeLayout relativeLayout;
     String device_name;
-    ActivityHandler mHandler; // Our main handler that will receive callback notifications
     public static ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
-    public final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mHandler = new ActivityHandler(this);
         bluetooth = BluetoothAdapter.getDefaultAdapter();
         if(bluetooth==null) {
             Toast.makeText(this,"Device incompatible",Toast.LENGTH_SHORT).show();
@@ -189,8 +191,15 @@ public class MainActivity extends AppCompatActivity {
                         bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
 
                         System.out.println("reached till connected thread");
+                        String data = new String((byte[]) buffer, StandardCharsets.UTF_8);
 
-                        mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+
+                        int i = 0;
+                        while (data.charAt(i) != '\n') i++;
+
+                        data = data.substring(0, i-1);
+                        if(Pattern.matches("(\\d:[a-zA-Z]:\\d,)*$",data)) getDevices(data);
+                        //mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
                     }
 
                 } catch (IOException e) {
@@ -213,6 +222,85 @@ public class MainActivity extends AppCompatActivity {
             try {
                 mmSocket.close();
             } catch (IOException e) { }
+        }
+        private void getDevices(String data) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    textView.setText("Setting up Remote");
+                }
+            });
+            final ArrayList<Devices> device_list = new ArrayList<>(); // no of devices supported in arduino
+
+            int i = 0;
+            while (i < data.length()-1) {
+                int dev_no = 0;
+                while (i < data.length() && Character.isDigit(data.charAt(i))) {
+                    dev_no = dev_no * 10 + Character.getNumericValue(data.charAt(i));
+                    i++;
+                }
+
+                i++; // skip :
+
+                String device_code = "";
+                while (i < data.length() && Character.isLetter(data.charAt(i))) {
+                    device_code += data.charAt(i);
+                    i++;
+                }
+
+                i++; // skip :
+
+                int status = 0;
+                while (i < data.length() && Character.isDigit(data.charAt(i))) {
+                    status = status * 10 + Character.getNumericValue(data.charAt(i));
+                    i++;
+                }
+
+                // create ListItem -->change to android code
+                Devices device = new Devices(dev_no, device_code,status);
+                device_list.add(device);
+
+                i++; // skip ,
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    CustomGrid gridAdapter = new CustomGrid(MainActivity.this, device_list);
+                    grid.setAdapter(gridAdapter);
+                    grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            imageGrid = (ImageView) view.findViewById(R.id.grid_image);
+                            textGrid = (TextView) view.findViewById(R.id.grid_text);
+                            Devices dev = device_list.get(position);
+                            if(dev.status==1) {
+                                dev.status=0;
+                                view.setBackgroundResource(R.drawable.round);
+                                textGrid.setTextColor(getResources().getColor(R.color.orange));
+                                imageGrid.setColorFilter(getResources().getColor(R.color.orange));
+                            } else {
+                                dev.status=1;
+                                view.setBackgroundResource(R.drawable.round_orange);
+                                textGrid.setTextColor(getResources().getColor(R.color.colorPrimary));
+                                imageGrid.setColorFilter(getResources().getColor(R.color.colorPrimary));
+                            }
+                            String  control = dev.dev_no + ":" + dev.status;
+                            System.out.println(control);
+                            write(control);
+//                            if(dev.name=="Tubelight") if(dev.status==1) imageGrid.setImageResource(R.drawable.tubelight_on); else imageGrid.setImageResource(R.drawable.tubelight_off);
+//                            if(dev.name=="Fan") if(dev.status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
+//                            if(dev.name=="Socket") if(dev.status==1) imageGrid.setImageResource(R.drawable.socket_on); else imageGrid.setImageResource(R.drawable.socket_off);
+//                            if(dev.name=="Lamp") if(dev.status==1) imageGrid.setImageResource(R.drawable.lamp_on); else imageGrid.setImageResource(R.drawable.lamp_off);
+//                            if(dev.name=="CFL") if(dev.status==1) imageGrid.setImageResource(R.drawable.cfl_on); else imageGrid.setImageResource(R.drawable.cfl_off);
+//                            if(dev.name=="Ceiling light") if(dev.status==1) imageGrid.setImageResource(R.drawable.ceiling_light_on); else imageGrid.setImageResource(R.drawable.ceiling_light_off);
+//                            if(dev.name=="Bulb") if(dev.status==1) imageGrid.setImageResource(R.drawable.bulb_on); else imageGrid.setImageResource(R.drawable.bulb_off);
+                        }
+                    });
+                    Log.d(TAG, "getDevices: setting remote now");
+                    relativeLayout.setVisibility(View.GONE);
+                    Log.d(TAG, "getDevices: Now grid should be visible");
+                }
+            });
         }
     }
 }

@@ -45,25 +45,27 @@ public class CustomGrid extends BaseAdapter{
             View grid = inflater.inflate(R.layout.grid_single, null);
 
             ImageView imageGrid = (ImageView) grid.findViewById(R.id.grid_image);
-            TextView textView = (TextView) grid.findViewById(R.id.grid_text);
+            TextView textGrid = (TextView) grid.findViewById(R.id.grid_text);
 
-            if(devices.get(position).name=="Tubelight")
-                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.tubelight_on); else imageGrid.setImageResource(R.drawable.tubelight_off);
-            if(devices.get(position).name=="Fan")
-                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
-            if(devices.get(position).name=="Socket")
-                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.socket_on); else imageGrid.setImageResource(R.drawable.socket_off);
-            if(devices.get(position).name=="Lamp")
-                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.lamp_on); else imageGrid.setImageResource(R.drawable.lamp_off);
-            if(devices.get(position).name=="CFL")
-                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.cfl_on); else imageGrid.setImageResource(R.drawable.cfl_off);
-            if(devices.get(position).name=="Ceiling light")
-                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.ceiling_light_on); else imageGrid.setImageResource(R.drawable.ceiling_light_off);
-            if(devices.get(position).name=="Bulb")
-                if(devices.get(position).status==1) imageGrid.setImageResource(R.drawable.bulb_on); else imageGrid.setImageResource(R.drawable.bulb_off);
+            if(devices.get(position).name=="Tubelight") imageGrid.setImageResource(R.drawable.tubelight_off);
+            if(devices.get(position).name=="Fan") imageGrid.setImageResource(R.drawable.fan_off);
+            if(devices.get(position).name=="Socket") imageGrid.setImageResource(R.drawable.socket_off);
+            if(devices.get(position).name=="Lamp") imageGrid.setImageResource(R.drawable.lamp_off);
+            if(devices.get(position).name=="CFL") imageGrid.setImageResource(R.drawable.cfl_off);
+            if(devices.get(position).name=="Ceiling light") imageGrid.setImageResource(R.drawable.ceiling_light_off);
+            if(devices.get(position).name=="Bulb") imageGrid.setImageResource(R.drawable.bulb_off);
 
-            textView.setText(devices.get(position).name);
+            textGrid.setText(devices.get(position).name);
 
+            if(devices.get(position).status==0) {
+                grid.setBackgroundResource(R.drawable.round);
+                textGrid.setTextColor(mContext.getResources().getColor(R.color.orange));
+                imageGrid.setColorFilter(mContext.getResources().getColor(R.color.orange));
+            } else {
+                grid.setBackgroundResource(R.drawable.round_orange);
+                textGrid.setTextColor(mContext.getResources().getColor(R.color.colorPrimary));
+                imageGrid.setColorFilter(mContext.getResources().getColor(R.color.colorPrimary));
+            }
             return grid;
         }
         else return convertView;
