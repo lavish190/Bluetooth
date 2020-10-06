@@ -82,6 +82,8 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
         listView.setAdapter(adapter);
 
+        listView.setVisibility(View.VISIBLE);
+        change_room.setVisibility(View.GONE);
         change_room.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -310,6 +312,7 @@ public class MainActivity extends AppCompatActivity {
                     });
                     Log.d(TAG, "getDevices: setting remote now");
                     relativeLayout.setVisibility(View.GONE);
+                    change_room.setVisibility(View.VISIBLE);
                     Log.d(TAG, "getDevices: Now grid should be visible");
                 }
             });
