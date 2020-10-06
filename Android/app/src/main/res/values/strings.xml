@@ -5,4 +5,5 @@
     <string name="select_your_room">Select Your Room</string>
     <string name="loading">loading</string>
     <string name="todo">TODO</string>
+    <string name="help">Help</string>
 </resources>

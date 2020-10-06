@@ -8,9 +8,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 1;
 
     BluetoothAdapter bluetooth;
+    Button change_room;
     ListView listView;
     TextView textView;
     ImageView imageGrid;
@@ -59,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<String> list = new ArrayList<>();
         listView = findViewById(R.id.listView);
         grid = findViewById(R.id.grid);
+        change_room = findViewById(R.id.change_room);
         textView = findViewById(R.id.textView);
         relativeLayout = findViewById(R.id.relativeLayout);
 
@@ -78,6 +82,14 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
         listView.setAdapter(adapter);
 
+        change_room.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (listView.getVisibility() == View.VISIBLE)
+                    listView.setVisibility(View.GONE);
+                else listView.setVisibility(View.VISIBLE);
+            }
+        });
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
