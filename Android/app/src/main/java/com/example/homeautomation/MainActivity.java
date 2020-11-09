@@ -287,6 +287,9 @@ public class MainActivity extends AppCompatActivity {
                             imageGrid = (ImageView) view.findViewById(R.id.grid_image);
                             textGrid = (TextView) view.findViewById(R.id.grid_text);
                             Devices dev = device_list.get(position);
+                            String  control = dev.dev_no + ":" + dev.status;
+                            System.out.println(control);
+                            write(control);
                             if(dev.status==1) {
                                 dev.status=0;
                                 view.setBackgroundResource(R.drawable.round);
@@ -298,9 +301,6 @@ public class MainActivity extends AppCompatActivity {
                                 textGrid.setTextColor(getResources().getColor(R.color.colorPrimary));
                                 imageGrid.setColorFilter(getResources().getColor(R.color.colorPrimary));
                             }
-                            String  control = dev.dev_no + ":" + dev.status;
-                            System.out.println(control);
-                            write(control);
 //                            if(dev.name=="Tubelight") if(dev.status==1) imageGrid.setImageResource(R.drawable.tubelight_on); else imageGrid.setImageResource(R.drawable.tubelight_off);
 //                            if(dev.name=="Fan") if(dev.status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
 //                            if(dev.name=="Socket") if(dev.status==1) imageGrid.setImageResource(R.drawable.socket_on); else imageGrid.setImageResource(R.drawable.socket_off);
