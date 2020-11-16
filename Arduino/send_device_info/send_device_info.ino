@@ -20,6 +20,7 @@ void perform_command(String inp) {            //this format will be recieved : "
   char c = inp.charAt(inp.length()-1);
   digitalWrite(dev_no[dev.toInt()], c-'0');
   status[dev.toInt()] = c-'0';
+  Serial.println("Acknowledgement");
 }
 
 void setup() {

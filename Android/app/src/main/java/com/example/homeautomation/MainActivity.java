@@ -1,6 +1,12 @@
 package com.example.homeautomation;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSnapHelper;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SnapHelper;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -9,11 +15,14 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -35,13 +44,16 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 1;
 
     BluetoothAdapter bluetooth;
-    Button change_room;
+    ImageButton change_room;
     ListView listView;
     TextView textView;
     ImageView imageGrid;
     TextView textGrid;
     GridView grid;
     RelativeLayout relativeLayout;
+    RecyclerView recyclerView;
+    RecyclerView.LayoutManager layoutManager;
+    RecyclerView.Adapter rAdapter;
     String device_name;
     public static ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
@@ -60,12 +72,17 @@ public class MainActivity extends AppCompatActivity {
 
         setTitle("Select Your Room");
         ArrayList<String> list = new ArrayList<>();
+        ArrayList<BTdevice> bluetoothDevices = new ArrayList<>();
         listView = findViewById(R.id.listView);
         grid = findViewById(R.id.grid);
         change_room = findViewById(R.id.change_room);
         textView = findViewById(R.id.textView);
         relativeLayout = findViewById(R.id.relativeLayout);
+        recyclerView = findViewById(R.id.recycler_view);
 
+        recyclerView.hasFixedSize();
+        layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
 
         if(!bluetooth.isEnabled()) {
             Toast.makeText(this,"Turning On Bluetooth",Toast.LENGTH_SHORT).show();
@@ -76,8 +93,24 @@ public class MainActivity extends AppCompatActivity {
             Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
             for (BluetoothDevice device : devices) {
                 list.add(device.getName() + "\n" + device.getAddress());
+                bluetoothDevices.add(new BTdevice(device.getName(),device.getAddress()));
             }
         }
+
+        rAdapter = new CustomList(bluetoothDevices);
+        recyclerView.setAdapter(rAdapter);
+
+        final SnapHelper snapHelper = new LinearSnapHelper();
+        snapHelper.attachToRecyclerView(recyclerView);
+        recyclerView.setOnScrollChangeListener(new RecyclerView.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                View view = snapHelper.findSnapView(layoutManager);
+                int pos = layoutManager.getPosition(view);
+
+                RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(pos);
+            }
+        });
 
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
         listView.setAdapter(adapter);
@@ -165,6 +198,22 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.help) {
+            Toast.makeText(this, "Going to Help", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         return device.createRfcommSocketToServiceRecord(BTMODULEUUID);
         //creates secure outgoing connection with BT device using UUID
@@ -204,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
                         bytes = mmInStream.available(); // how many bytes are ready to be read?
                         bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
 
-                        System.out.println("reached till connected thread");
+                        System.out.println("reading....");
                         String data = new String((byte[]) buffer, StandardCharsets.UTF_8);
 
 
@@ -213,6 +262,7 @@ public class MainActivity extends AppCompatActivity {
 
                         data = data.substring(0, i-1);
                         if(Pattern.matches("(\\d:[a-zA-Z]:\\d,)*$",data)) getDevices(data);
+                        else Log.d(TAG, "run: "+data);
                         //mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
                     }
 
@@ -287,9 +337,6 @@ public class MainActivity extends AppCompatActivity {
                             imageGrid = (ImageView) view.findViewById(R.id.grid_image);
                             textGrid = (TextView) view.findViewById(R.id.grid_text);
                             Devices dev = device_list.get(position);
-                            String  control = dev.dev_no + ":" + dev.status;
-                            System.out.println(control);
-                            write(control);
                             if(dev.status==1) {
                                 dev.status=0;
                                 view.setBackgroundResource(R.drawable.round);
@@ -301,6 +348,9 @@ public class MainActivity extends AppCompatActivity {
                                 textGrid.setTextColor(getResources().getColor(R.color.colorPrimary));
                                 imageGrid.setColorFilter(getResources().getColor(R.color.colorPrimary));
                             }
+                            String  control = dev.dev_no + ":" + dev.status;
+                            System.out.println(control);
+                            write(control);
 //                            if(dev.name=="Tubelight") if(dev.status==1) imageGrid.setImageResource(R.drawable.tubelight_on); else imageGrid.setImageResource(R.drawable.tubelight_off);
 //                            if(dev.name=="Fan") if(dev.status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);
 //                            if(dev.name=="Socket") if(dev.status==1) imageGrid.setImageResource(R.drawable.socket_on); else imageGrid.setImageResource(R.drawable.socket_off);
