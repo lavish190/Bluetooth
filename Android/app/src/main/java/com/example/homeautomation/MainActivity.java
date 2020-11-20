@@ -15,23 +15,18 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.github.rubensousa.gravitysnaphelper.GravitySnapHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
 
     BluetoothAdapter bluetooth;
     ImageButton change_room;
-    ListView listView;
     TextView textView;
     ImageView imageGrid;
     TextView textGrid;
@@ -77,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
         setTitle("Select Your Room");
         ArrayList<String> list = new ArrayList<>();
         ArrayList<BTdevice> bluetoothDevices = new ArrayList<>();
-        listView = findViewById(R.id.listView);
         grid = findViewById(R.id.grid);
         change_room = findViewById(R.id.change_room);
         textView = findViewById(R.id.textView);
@@ -97,10 +90,8 @@ public class MainActivity extends AppCompatActivity {
             Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
             bluetoothDevices.add(new BTdevice("",""));
             bluetoothDevices.add(new BTdevice("",""));
-            for (BluetoothDevice device : devices) {
-                list.add(device.getName() + "\n" + device.getAddress());
+            for (BluetoothDevice device : devices)
                 bluetoothDevices.add(new BTdevice(device.getName(),device.getAddress()));
-            }
             bluetoothDevices.add(new BTdevice("",""));
             bluetoothDevices.add(new BTdevice("",""));
         }
@@ -211,86 +202,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
-        listView.setAdapter(adapter);
-
         change_room.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (recyclerView.getVisibility() == View.VISIBLE)
                     recyclerView.setVisibility(View.GONE);
                 else recyclerView.setVisibility(View.VISIBLE);
-            }
-        });
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                listView.setVisibility(View.GONE);
-
-                device_name = (String) listView.getItemAtPosition(position);
-                final String address = device_name.substring(device_name.length() - 17);
-                final String name = device_name.substring(0,device_name.length() - 17);
-
-                textView.setText("Connecting to.. "+ name);
-                textView.setVisibility(View.VISIBLE);
-
-                new Thread() {
-                    public void run() {
-
-                        boolean fail = false;
-                        BluetoothDevice device = bluetooth.getRemoteDevice(address);
-
-                        try {
-                            mBTSocket = createBluetoothSocket(device);
-                        } catch (IOException e) {
-                            fail = true;
-                            runOnUiThread(new Runnable(){
-                                public void run() {
-                                    Log.e(TAG, "handleMessage: Socket Creation Failed");
-                                    textView.setText("Socket Creation Failed: Your Device might not support Bluetooth");
-                                }
-                            });
-                        }
-                        // Establish the Bluetooth socket connection.
-                        try {
-                            mBTSocket.connect();
-                        } catch (IOException e) {
-                            try {
-                                fail = true;
-                                mBTSocket.close();
-                                runOnUiThread(new Runnable(){
-                                    public void run() {
-                                        Log.e(TAG, "handleMessage: Connection Failed");
-                                        textView.setText("Connection Failed");
-                                    }
-                                });
-                                Intent intent = new Intent(MainActivity.this,MainActivity.class);
-                                startActivity(intent);
-                            } catch (IOException e2) {
-                                runOnUiThread(new Runnable(){
-                                    public void run() {
-                                        Log.e(TAG, "handleMessage: Socket Creation Failed");
-                                        textView.setText("Socket Creation Failed: Your Device might not support Bluetooth");
-                                    }
-                                });
-                            }
-                        }
-                        if (!fail) {
-                            System.out.println(mBTSocket.isConnected());
-                            runOnUiThread(new Runnable(){
-                                public void run() {
-                                    Log.d(TAG, "handleMessage: Connected to Device: " + name );
-                                    textView.setText("Connected to " + name);
-                                    setTitle(name);
-                                }
-                            });
-                            mConnectedThread = new ConnectedThread(mBTSocket);
-                            mConnectedThread.start();
-                            mConnectedThread.write("read_device");
-                        }
-                    }
-                }.start();
             }
         });
     }
