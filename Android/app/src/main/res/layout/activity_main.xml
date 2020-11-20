@@ -69,6 +69,11 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"
+        android:scrollbars="vertical"
+        android:scrollbarThumbVertical="@color/orange"
+        android:scrollbarSize="3dp"
+        android:scrollbarStyle="insideInset"
+        android:background="@drawable/round_top"
         android:layout_width="match_parent"
         android:layout_height="257dp"
         android:layout_alignParentStart="true"
@@ -76,11 +81,10 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="11dp"
-        android:background="@color/colorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:visibility="gone"/>
+        android:visibility="visible"/>
 
     <ListView
         android:id="@+id/listView"

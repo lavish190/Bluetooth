@@ -11,16 +11,18 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -28,6 +30,8 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.github.rubensousa.gravitysnaphelper.GravitySnapHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,10 +95,14 @@ public class MainActivity extends AppCompatActivity {
         }
         else {
             Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
+            bluetoothDevices.add(new BTdevice("",""));
+            bluetoothDevices.add(new BTdevice("",""));
             for (BluetoothDevice device : devices) {
                 list.add(device.getName() + "\n" + device.getAddress());
                 bluetoothDevices.add(new BTdevice(device.getName(),device.getAddress()));
             }
+            bluetoothDevices.add(new BTdevice("",""));
+            bluetoothDevices.add(new BTdevice("",""));
         }
 
         rAdapter = new CustomList(bluetoothDevices);
@@ -102,27 +110,116 @@ public class MainActivity extends AppCompatActivity {
 
         final SnapHelper snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(recyclerView);
-        recyclerView.setOnScrollChangeListener(new RecyclerView.OnScrollChangeListener() {
+
+        recyclerView.setVisibility(View.VISIBLE);
+        change_room.setVisibility(View.GONE);
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+            public void onScrollStateChanged(@NonNull final RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
                 View view = snapHelper.findSnapView(layoutManager);
                 int pos = layoutManager.getPosition(view);
 
                 RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(pos);
+                RelativeLayout list_item = viewHolder.itemView.findViewById(R.id.list_item);
+                TextView name_text = viewHolder.itemView.findViewById(R.id.text);
+                TextView address_text = viewHolder.itemView.findViewById(R.id.address);
+                ImageButton connect = viewHolder.itemView.findViewById(R.id.connect);
+
+                final String name = (String) name_text.getText();
+                final String address = (String) address_text.getText();
+
+                if(newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    connect.setVisibility(View.VISIBLE);
+                    list_item.setBackgroundColor(getResources().getColor(R.color.light_yellow));
+                    name_text.setTextColor(getResources().getColor(R.color.colorPrimary));
+                    name_text.animate().setDuration(350).scaleX(1.2f).scaleY(1.2f).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+                    connect.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            recyclerView.setVisibility(View.GONE);
+
+                            textView.setText("Connecting to.. "+ name);
+                            textView.setVisibility(View.VISIBLE);
+
+
+                            new Thread() {
+                                public void run() {
+
+                                    boolean fail = false;
+                                    BluetoothDevice device = bluetooth.getRemoteDevice(address);
+
+                                    try {
+                                        mBTSocket = createBluetoothSocket(device);
+                                    } catch (IOException e) {
+                                        fail = true;
+                                        runOnUiThread(new Runnable(){
+                                            public void run() {
+                                                Log.e(TAG, "handleMessage: Socket Creation Failed");
+                                                textView.setText("Socket Creation Failed: Your Device might not support Bluetooth");
+                                            }
+                                        });
+                                    }
+                                    // Establish the Bluetooth socket connection.
+                                    try {
+                                        mBTSocket.connect();
+                                    } catch (IOException e) {
+                                        try {
+                                            fail = true;
+                                            mBTSocket.close();
+                                            runOnUiThread(new Runnable(){
+                                                public void run() {
+                                                    Log.e(TAG, "handleMessage: Connection Failed");
+                                                    textView.setText("Connection Failed");
+                                                }
+                                            });
+                                            Intent intent = new Intent(MainActivity.this,MainActivity.class);
+                                            startActivity(intent);
+                                        } catch (IOException e2) {
+                                            runOnUiThread(new Runnable(){
+                                                public void run() {
+                                                    Log.e(TAG, "handleMessage: Socket Creation Failed");
+                                                    textView.setText("Socket Creation Failed: Your Device might not support Bluetooth");
+                                                }
+                                            });
+                                        }
+                                    }
+                                    if (!fail) {
+                                        System.out.println(mBTSocket.isConnected());
+                                        runOnUiThread(new Runnable(){
+                                            public void run() {
+                                                Log.d(TAG, "handleMessage: Connected to Device: " + name );
+                                                textView.setText("Connected to " + name);
+                                                setTitle(name);
+                                            }
+                                        });
+                                        mConnectedThread = new ConnectedThread(mBTSocket);
+                                        mConnectedThread.start();
+                                        mConnectedThread.write("read_device");
+                                    }
+                                }
+                            }.start();
+                        }
+                    });
+                }else {
+                    connect.setVisibility(View.GONE);
+                    list_item.setBackgroundColor(getResources().getColor(R.color.no_color));
+                    name_text.setTextColor(Color.parseColor("#000000"));
+                    name_text.animate().setDuration(350).scaleX(1).scaleY(1).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+                }
             }
         });
 
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, list);
         listView.setAdapter(adapter);
 
-        listView.setVisibility(View.VISIBLE);
-        change_room.setVisibility(View.GONE);
         change_room.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (listView.getVisibility() == View.VISIBLE)
-                    listView.setVisibility(View.GONE);
-                else listView.setVisibility(View.VISIBLE);
+                if (recyclerView.getVisibility() == View.VISIBLE)
+                    recyclerView.setVisibility(View.GONE);
+                else recyclerView.setVisibility(View.VISIBLE);
             }
         });
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

@@ -31,6 +31,7 @@ public class CustomList extends RecyclerView.Adapter<CustomList.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.text.setText(bluetoothDevices.get(position).name);
+        holder.address.setText(bluetoothDevices.get(position).address);
     }
 
     @Override
@@ -39,11 +40,12 @@ public class CustomList extends RecyclerView.Adapter<CustomList.ViewHolder> {
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        public TextView text;
+        public TextView text,address;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             text = itemView.findViewById(R.id.text);
+            address = itemView.findViewById(R.id.address);
         }
     }
 }
