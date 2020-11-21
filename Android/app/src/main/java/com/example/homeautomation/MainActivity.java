@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -24,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,18 +47,23 @@ public class MainActivity extends AppCompatActivity {
     BluetoothAdapter bluetooth;
     ImageButton change_room;
     TextView textView;
-    ImageView imageGrid;
+    ImageView imageGrid,loading;
     TextView textGrid;
     GridView grid;
-    RelativeLayout relativeLayout;
+    ProgressBar progressBar;
+    RelativeLayout relativeLayout,load;
     RecyclerView recyclerView;
     RecyclerView.LayoutManager layoutManager;
     RecyclerView.Adapter rAdapter;
-    String device_name;
+    AnimationDrawable animationDrawable;
+
     public static ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
+    public static final int DURATION = 200;
+    public static final int y_TRANS = 700;
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
+    private boolean show;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,14 +76,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setTitle("Select Your Room");
-        ArrayList<String> list = new ArrayList<>();
         ArrayList<BTdevice> bluetoothDevices = new ArrayList<>();
         grid = findViewById(R.id.grid);
         change_room = findViewById(R.id.change_room);
         textView = findViewById(R.id.textView);
         relativeLayout = findViewById(R.id.relativeLayout);
         recyclerView = findViewById(R.id.recycler_view);
+        progressBar = findViewById(R.id.progress_horizontal);
+        load = findViewById(R.id.load);
+        loading = findViewById(R.id.loading);
+        animationDrawable = (AnimationDrawable)loading.getDrawable();
+        animationDrawable.start();
 
+        progressBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.orange),android.graphics.PorterDuff.Mode.SRC_IN);
         recyclerView.hasFixedSize();
         layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
@@ -113,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
                 int pos = layoutManager.getPosition(view);
 
                 RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(pos);
-                RelativeLayout list_item = viewHolder.itemView.findViewById(R.id.list_item);
+                final RelativeLayout list_item = viewHolder.itemView.findViewById(R.id.list_item);
                 TextView name_text = viewHolder.itemView.findViewById(R.id.text);
                 TextView address_text = viewHolder.itemView.findViewById(R.id.address);
                 ImageButton connect = viewHolder.itemView.findViewById(R.id.connect);
@@ -129,10 +141,13 @@ public class MainActivity extends AppCompatActivity {
                     connect.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            recyclerView.setVisibility(View.GONE);
+                            recyclerView.animate().setDuration(DURATION).translationY(y_TRANS).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+                            show=false;
 
                             textView.setText("Connecting to.. "+ name);
                             textView.setVisibility(View.VISIBLE);
+                            progressBar.setVisibility(View.VISIBLE);
+                            progressBar.setProgress(10,true);
 
 
                             new Thread() {
@@ -177,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                     }
                                     if (!fail) {
+                                        progressBar.setProgress(60,true);
                                         System.out.println(mBTSocket.isConnected());
                                         runOnUiThread(new Runnable(){
                                             public void run() {
@@ -205,9 +221,16 @@ public class MainActivity extends AppCompatActivity {
         change_room.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (recyclerView.getVisibility() == View.VISIBLE)
-                    recyclerView.setVisibility(View.GONE);
-                else recyclerView.setVisibility(View.VISIBLE);
+                if (!show) {
+                    show=true;
+                    Log.d(TAG, "onClick: "+show);
+                    recyclerView.animate().setDuration(DURATION).translationY(0).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+                }
+                else {
+                    show=false;
+                    Log.d(TAG, "onClick: "+show);
+                    recyclerView.animate().setDuration(DURATION).translationY(y_TRANS).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+                }
             }
         });
     }
@@ -276,7 +299,15 @@ public class MainActivity extends AppCompatActivity {
 
                         data = data.substring(0, i-1);
                         if(Pattern.matches("(\\d:[a-zA-Z]:\\d,)*$",data)) getDevices(data);
-                        else Log.d(TAG, "run: "+data);
+                        else if(data.contains("Acknowledgement")){
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    load.setVisibility(View.GONE);
+                                }
+                            });
+                            Log.d(TAG, "run: " + data);
+                        }
                         //mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
                     }
 
@@ -343,11 +374,13 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    progressBar.setProgress(100,true);
                     CustomGrid gridAdapter = new CustomGrid(MainActivity.this, device_list);
                     grid.setAdapter(gridAdapter);
                     grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            load.setVisibility(View.VISIBLE);
                             imageGrid = (ImageView) view.findViewById(R.id.grid_image);
                             textGrid = (TextView) view.findViewById(R.id.grid_text);
                             Devices dev = device_list.get(position);
