@@ -8,4 +8,5 @@
     <string name="help">Help</string>
     <string name="device_name">Device_name</string>
     <string name="address">address</string>
+    <string name="wi_fi">Wi-Fi</string>
 </resources>

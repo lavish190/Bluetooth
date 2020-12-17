@@ -42,7 +42,6 @@ import java.util.regex.Pattern;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    private static final int REQUEST_ENABLE_BT = 1;
 
     BluetoothAdapter bluetooth;
     ImageButton change_room;
@@ -94,11 +93,9 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         if(!bluetooth.isEnabled()) {
-            Toast.makeText(this,"Turning On Bluetooth",Toast.LENGTH_SHORT).show();
-            Intent in = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(in, REQUEST_ENABLE_BT);
+            startActivity(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));
         }
-        else {
+
             Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
             bluetoothDevices.add(new BTdevice("",""));
             bluetoothDevices.add(new BTdevice("",""));
@@ -106,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
                 bluetoothDevices.add(new BTdevice(device.getName(),device.getAddress()));
             bluetoothDevices.add(new BTdevice("",""));
             bluetoothDevices.add(new BTdevice("",""));
-        }
 
         rAdapter = new CustomList(bluetoothDevices);
         recyclerView.setAdapter(rAdapter);
@@ -177,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
                                             runOnUiThread(new Runnable(){
                                                 public void run() {
                                                     Log.e(TAG, "handleMessage: Connection Failed");
-                                                    textView.setText("Connection Failed");
+                                                    textView.setText("Connection Failed. Please try again");
                                                 }
                                             });
                                             Intent intent = new Intent(MainActivity.this,MainActivity.class);
@@ -223,12 +219,11 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!show) {
                     show=true;
-                    Log.d(TAG, "onClick: "+show);
+                    Log.d(TAG, "onClick: True");
                     recyclerView.animate().setDuration(DURATION).translationY(0).setInterpolator(new AccelerateDecelerateInterpolator()).start();
-                }
-                else {
+                } else {
                     show=false;
-                    Log.d(TAG, "onClick: "+show);
+                    Log.d(TAG, "onClick: False");
                     recyclerView.animate().setDuration(DURATION).translationY(y_TRANS).setInterpolator(new AccelerateDecelerateInterpolator()).start();
                 }
             }
@@ -245,7 +240,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.help) {
-            Toast.makeText(this, "Going to Help", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(MainActivity.this,HelpActivity.class);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -381,8 +377,8 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                             load.setVisibility(View.VISIBLE);
-                            imageGrid = (ImageView) view.findViewById(R.id.grid_image);
-                            textGrid = (TextView) view.findViewById(R.id.grid_text);
+                            imageGrid = view.findViewById(R.id.grid_image);
+                            textGrid = view.findViewById(R.id.grid_text);
                             Devices dev = device_list.get(position);
                             if(dev.status==1) {
                                 dev.status=0;

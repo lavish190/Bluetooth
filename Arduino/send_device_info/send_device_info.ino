@@ -1,8 +1,12 @@
+#include <SoftwareSerial.h>
+SoftwareSerial wifiSerial(2, 3);      // RX, TX for ESP8266
+int responseTime = 10;
+
 int dev_no[] = {13,12,11,10,9,8};                       //keep adding device pin number corrosponding to the device name
 String name[] = {"tubelight","fan","cfl","lamp","socket","bulb"};          //keep adding device name corrosponding to the device pin number
 bool status[sizeof(dev_no)/sizeof(dev_no[0])];
 
-void send_device_info() {                     //we can use this format : "dev_no : device_code"
+void send_device_info() {                     //we can use this format : "dev_no : device_code : status"
   String device_info;
   for(int i=0;i<(sizeof(dev_no)/sizeof(dev_no[0]));i++) {
     device_info.concat(String(i));
@@ -23,8 +27,35 @@ void perform_command(String inp) {            //this format will be recieved : "
   Serial.println("Acknowledgement");
 }
 
+String sendToWifi(String command, const int timeout){
+  String response = "";
+  wifiSerial.println(command); // send the read character to the esp8266
+  long int time = millis();
+  while((time+timeout) > millis())
+    while(wifiSerial.available()) {
+    String c = wifiSerial.readString();
+    response+=c;
+    }  
+  return response;
+}
+
+void sendData(String str){
+  String len="";
+  len+=str.length();
+  sendToWifi("AT+CIPSEND=0,"+len,responseTime);
+  delay(100);
+  sendToWifi(str,responseTime);
+}
+
 void setup() {
   Serial.begin(9600);
+  while (!Serial) {;} // wait for serial port to connect.
+  wifiSerial.begin(115200);
+  while (!wifiSerial) {;} // wait for wifi-serial port to connect.
+  sendToWifi("AT+CWMODE=2",responseTime);
+  sendToWifi("AT+CIFSR",responseTime);
+  sendToWifi("AT+CIPMUX=1",responseTime);
+  sendToWifi("AT+CIPSERVER=1,80",responseTime);
   for(int i=0;i<(sizeof(dev_no)/sizeof(dev_no[0]));i++) pinMode(dev_no[i],OUTPUT);
 }
 
@@ -34,4 +65,8 @@ void loop() {
      if(in=="read_device") send_device_info();   
      else perform_command(in);
    }
+   if(wifiSerial.available()) {
+    String in = wifiSerial.readString();
+    sendData(in);
+  }
 }
