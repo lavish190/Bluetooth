@@ -10,7 +10,10 @@ import androidx.recyclerview.widget.SnapHelper;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
@@ -56,6 +59,8 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView.Adapter rAdapter;
     AnimationDrawable animationDrawable;
 
+    ArrayList<BTdevice> bluetoothDevices = new ArrayList<>();
+
     public static ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
@@ -73,9 +78,7 @@ public class MainActivity extends AppCompatActivity {
         if(bluetooth==null) {
             Toast.makeText(this,"Device incompatible",Toast.LENGTH_SHORT).show();
         }
-
         setTitle("Select Your Room");
-        ArrayList<BTdevice> bluetoothDevices = new ArrayList<>();
         grid = findViewById(R.id.grid);
         change_room = findViewById(R.id.change_room);
         textView = findViewById(R.id.textView);
@@ -94,15 +97,25 @@ public class MainActivity extends AppCompatActivity {
 
         if(!bluetooth.isEnabled()) {
             startActivity(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));
+
+            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(stateReciever,BTIntent);
+        } else {
+            bluetoothDevices.add(new BTdevice("", ""));
+            bluetoothDevices.add(new BTdevice("", ""));
+            Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
+            for (BluetoothDevice device : devices)
+                bluetoothDevices.add(new BTdevice(device.getName(), device.getAddress()));
+            bluetoothDevices.add(new BTdevice("", ""));
+            bluetoothDevices.add(new BTdevice("", ""));
+
+            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(stateReciever,BTIntent);
         }
 
-            Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
-            bluetoothDevices.add(new BTdevice("",""));
-            bluetoothDevices.add(new BTdevice("",""));
-            for (BluetoothDevice device : devices)
-                bluetoothDevices.add(new BTdevice(device.getName(),device.getAddress()));
-            bluetoothDevices.add(new BTdevice("",""));
-            bluetoothDevices.add(new BTdevice("",""));
+        bluetooth.startDiscovery();
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter);
 
         rAdapter = new CustomList(bluetoothDevices);
         recyclerView.setAdapter(rAdapter);
@@ -174,10 +187,10 @@ public class MainActivity extends AppCompatActivity {
                                                 public void run() {
                                                     Log.e(TAG, "handleMessage: Connection Failed");
                                                     textView.setText("Connection Failed. Please try again");
+                                                    progressBar.setVisibility(View.GONE);
+                                                    recyclerView.animate().setDuration(DURATION).translationY(0).setInterpolator(new AccelerateDecelerateInterpolator()).start();
                                                 }
                                             });
-                                            Intent intent = new Intent(MainActivity.this,MainActivity.class);
-                                            startActivity(intent);
                                         } catch (IOException e2) {
                                             runOnUiThread(new Runnable(){
                                                 public void run() {
@@ -279,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
             // Keep listening to the InputStream until an exception occurs
             while (true) {
                 try {
+                   // if(!mmSocket.isConnected()) return;
                     // Read from the InputStream
                     bytes = mmInStream.available();
                     if (bytes != 0) {
@@ -411,4 +425,49 @@ public class MainActivity extends AppCompatActivity {
             });
         }
     }
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                bluetoothDevices.add(new BTdevice(device.getName(), device.getAddress()));
+                Log.d(TAG, "onReceive: "+ device.getName() +":"+ device.getAddress());
+                rAdapter = new CustomList(bluetoothDevices);
+                recyclerView.setAdapter(rAdapter);
+            }
+        }
+    };
+    private final BroadcastReceiver stateReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if(action.equals(bluetooth.ACTION_STATE_CHANGED)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,bluetooth.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        Log.d(TAG, "onReceive: turning on");
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        Log.d(TAG, "onReceive: state on");
+                        Set<BluetoothDevice> devices = bluetooth.getBondedDevices();
+                        bluetoothDevices.add(new BTdevice("", ""));
+                        bluetoothDevices.add(new BTdevice("", ""));
+                        for (BluetoothDevice device : devices)
+                            bluetoothDevices.add(new BTdevice(device.getName(),device.getAddress()));
+                        bluetoothDevices.add(new BTdevice("", ""));
+                        bluetoothDevices.add(new BTdevice("", ""));
+                        rAdapter = new CustomList(bluetoothDevices);
+                        recyclerView.setAdapter(rAdapter);
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        Log.d(TAG, "onReceive: Turning off");
+                        break;
+                    case BluetoothAdapter.STATE_OFF:
+                        Log.d(TAG, "onReceive: state off");
+                        break;
+                }
+            }
+        }
+    };
 }
