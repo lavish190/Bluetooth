@@ -465,6 +465,9 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case BluetoothAdapter.STATE_OFF:
                         Log.d(TAG, "onReceive: state off");
+                        bluetoothDevices.clear();
+                        rAdapter = new CustomList(bluetoothDevices);
+                        recyclerView.setAdapter(rAdapter);
                         break;
                 }
             }
