@@ -15,15 +15,20 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".HelpActivity"
-            android:theme="@style/AppTheme.SlidrActivityTheme" />
-        <activity android:name=".MainActivity">
+            android:name=".SplashScreen"
+            android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".IntroScreen"
+            android:theme="@style/AppIntroStyle"/>
+        <activity android:name=".MainActivity" />
+        <activity
+            android:name=".HelpActivity"
+            android:theme="@style/AppTheme.SlidrActivityTheme" />
     </application>
 
 </manifest>
