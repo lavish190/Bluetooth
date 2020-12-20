@@ -10,4 +10,5 @@
     <color name ="no_color">#00FFFFFF</color>
     <color name ="light_yellow">#F8A224</color>
     <color name="light_white">#C3FFFFFF</color>
+    <color name="un_selected_color">#C38A8A8A</color>
 </resources>
