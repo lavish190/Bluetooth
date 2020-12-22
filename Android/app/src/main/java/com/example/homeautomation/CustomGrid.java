@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
-public class CustomGrid extends BaseAdapter{
+public class  CustomGrid extends BaseAdapter{
     private final ArrayList<Devices> devices;
     private final Context mContext;
     private RecyclerView.ViewHolder holder;

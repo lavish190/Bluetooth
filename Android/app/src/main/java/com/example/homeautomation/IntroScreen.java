@@ -34,7 +34,6 @@ public class IntroScreen extends AppIntro {
                 getResources().getColor(R.color.orange),
                 getResources().getColor(R.color.orange)));
 
-
         addSlide(AppIntroFragment.newInstance("",
                 "Access your home smart devices right from your mobile ",
                 R.drawable.fan,
