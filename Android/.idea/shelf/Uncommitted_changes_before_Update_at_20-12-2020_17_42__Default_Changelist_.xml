@@ -1,0 +1,14 @@
+<changelist name="Uncommitted_changes_before_Update_at_20-12-2020_17_42_[Default_Changelist]" date="1608466350205" recycled="true" deleted="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_20-12-2020_17_42_[Default_Changelist]/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before Update at 20-12-2020 17:42 [Default Changelist]" />
+  <binary>
+    <option name="BEFORE_PATH" />
+    <option name="AFTER_PATH" value="app/src/main/res/font/open_sans_regular.ttf" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_20-12-2020_17_42_[Default_Changelist]/open_sans_regular.ttf" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" />
+    <option name="AFTER_PATH" value="app/src/main/res/font/open_sans_italic.ttf" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_20-12-2020_17_42_[Default_Changelist]/open_sans_italic.ttf" />
+  </binary>
+</changelist>

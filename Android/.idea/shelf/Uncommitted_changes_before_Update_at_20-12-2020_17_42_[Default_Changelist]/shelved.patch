@@ -1,0 +1,415 @@
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    package=\"com.example.homeautomation\">\r\n\r\n    <uses-permission android:name=\"android.permission.BLUETOOTH\" />\r\n    <uses-permission android:name=\"android.permission.BLUETOOTH_ADMIN\" />\r\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\r\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />\r\n\r\n    <application\r\n        android:icon=\"@mipmap/icon\"\r\n        android:label=\"@string/app_name\"\r\n        android:roundIcon=\"@mipmap/icon_circle\"\r\n        android:supportsRtl=\"true\"\r\n        android:theme=\"@style/AppTheme\">\r\n\r\n        <activity\r\n            android:name=\".HelpActivity\"\r\n            android:theme=\"@style/AppTheme.SlidrActivityTheme\" />\r\n        <activity android:name=\".MainActivity\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n        </activity>\r\n    </application>\r\n\r\n</manifest>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/src/main/AndroidManifest.xml	(date 1608464684873)
+@@ -15,15 +15,20 @@
+         android:theme="@style/AppTheme">
+ 
+         <activity
+-            android:name=".HelpActivity"
+-            android:theme="@style/AppTheme.SlidrActivityTheme" />
+-        <activity android:name=".MainActivity">
++            android:name=".SplashScreen"
++            android:theme="@style/SplashTheme">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+-
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
++
++        <activity android:name=".IntroScreen"
++            android:theme="@style/AppIntroStyle"/>
++        <activity android:name=".MainActivity" />
++        <activity
++            android:name=".HelpActivity"
++            android:theme="@style/AppTheme.SlidrActivityTheme" />
+     </application>
+ 
+ </manifest>
+\ No newline at end of file
+Index: app/src/main/java/com/example/homeautomation/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.homeautomation;\r\n\r\nimport androidx.annotation.NonNull;\r\nimport androidx.appcompat.app.AppCompatActivity;\r\nimport androidx.recyclerview.widget.LinearLayoutManager;\r\nimport androidx.recyclerview.widget.LinearSnapHelper;\r\nimport androidx.recyclerview.widget.RecyclerView;\r\nimport androidx.recyclerview.widget.SnapHelper;\r\n\r\nimport android.bluetooth.BluetoothAdapter;\r\nimport android.bluetooth.BluetoothDevice;\r\nimport android.bluetooth.BluetoothSocket;\r\nimport android.content.Intent;\r\nimport android.graphics.Color;\r\nimport android.graphics.drawable.AnimationDrawable;\r\nimport android.os.Bundle;\r\nimport android.os.SystemClock;\r\nimport android.util.Log;\r\nimport android.view.Menu;\r\nimport android.view.MenuInflater;\r\nimport android.view.MenuItem;\r\nimport android.view.View;\r\nimport android.view.animation.AccelerateDecelerateInterpolator;\r\nimport android.widget.AdapterView;\r\nimport android.widget.GridView;\r\nimport android.widget.ImageButton;\r\nimport android.widget.ImageView;\r\nimport android.widget.ProgressBar;\r\nimport android.widget.RelativeLayout;\r\nimport android.widget.TextView;\r\nimport android.widget.Toast;\r\n\r\nimport java.io.IOException;\r\nimport java.io.InputStream;\r\nimport java.io.OutputStream;\r\nimport java.nio.charset.StandardCharsets;\r\nimport java.util.ArrayList;\r\nimport java.util.Set;\r\nimport java.util.UUID;\r\nimport java.util.regex.Pattern;\r\n\r\npublic class MainActivity extends AppCompatActivity {\r\n\r\n    private static final String TAG = \"MainActivity\";\r\n\r\n    BluetoothAdapter bluetooth;\r\n    ImageButton change_room;\r\n    TextView textView;\r\n    ImageView imageGrid,loading;\r\n    TextView textGrid;\r\n    GridView grid;\r\n    ProgressBar progressBar;\r\n    RelativeLayout relativeLayout,load;\r\n    RecyclerView recyclerView;\r\n    RecyclerView.LayoutManager layoutManager;\r\n    RecyclerView.Adapter rAdapter;\r\n    AnimationDrawable animationDrawable;\r\n\r\n    public static ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data\r\n    private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path\r\n\r\n    public static final int DURATION = 200;\r\n    public static final int y_TRANS = 700;\r\n    private static final UUID BTMODULEUUID = UUID.fromString(\"00001101-0000-1000-8000-00805F9B34FB\"); // \"random\" unique identifier\r\n    private boolean show;\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_main);\r\n\r\n        bluetooth = BluetoothAdapter.getDefaultAdapter();\r\n        if(bluetooth==null) {\r\n            Toast.makeText(this,\"Device incompatible\",Toast.LENGTH_SHORT).show();\r\n        }\r\n\r\n        setTitle(\"Select Your Room\");\r\n        ArrayList<BTdevice> bluetoothDevices = new ArrayList<>();\r\n        grid = findViewById(R.id.grid);\r\n        change_room = findViewById(R.id.change_room);\r\n        textView = findViewById(R.id.textView);\r\n        relativeLayout = findViewById(R.id.relativeLayout);\r\n        recyclerView = findViewById(R.id.recycler_view);\r\n        progressBar = findViewById(R.id.progress_horizontal);\r\n        load = findViewById(R.id.load);\r\n        loading = findViewById(R.id.loading);\r\n        animationDrawable = (AnimationDrawable)loading.getDrawable();\r\n        animationDrawable.start();\r\n\r\n        progressBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.orange),android.graphics.PorterDuff.Mode.SRC_IN);\r\n        recyclerView.hasFixedSize();\r\n        layoutManager = new LinearLayoutManager(this);\r\n        recyclerView.setLayoutManager(layoutManager);\r\n\r\n        if(!bluetooth.isEnabled()) {\r\n            startActivity(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));\r\n        }\r\n\r\n            Set<BluetoothDevice> devices = bluetooth.getBondedDevices();\r\n            bluetoothDevices.add(new BTdevice(\"\",\"\"));\r\n            bluetoothDevices.add(new BTdevice(\"\",\"\"));\r\n            for (BluetoothDevice device : devices)\r\n                bluetoothDevices.add(new BTdevice(device.getName(),device.getAddress()));\r\n            bluetoothDevices.add(new BTdevice(\"\",\"\"));\r\n            bluetoothDevices.add(new BTdevice(\"\",\"\"));\r\n\r\n        rAdapter = new CustomList(bluetoothDevices);\r\n        recyclerView.setAdapter(rAdapter);\r\n\r\n        final SnapHelper snapHelper = new LinearSnapHelper();\r\n        snapHelper.attachToRecyclerView(recyclerView);\r\n\r\n        recyclerView.setVisibility(View.VISIBLE);\r\n        change_room.setVisibility(View.GONE);\r\n\r\n        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {\r\n            @Override\r\n            public void onScrollStateChanged(@NonNull final RecyclerView recyclerView, int newState) {\r\n                super.onScrollStateChanged(recyclerView, newState);\r\n                View view = snapHelper.findSnapView(layoutManager);\r\n                int pos = layoutManager.getPosition(view);\r\n\r\n                RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(pos);\r\n                final RelativeLayout list_item = viewHolder.itemView.findViewById(R.id.list_item);\r\n                TextView name_text = viewHolder.itemView.findViewById(R.id.text);\r\n                TextView address_text = viewHolder.itemView.findViewById(R.id.address);\r\n                ImageButton connect = viewHolder.itemView.findViewById(R.id.connect);\r\n\r\n                final String name = (String) name_text.getText();\r\n                final String address = (String) address_text.getText();\r\n\r\n                if(newState == RecyclerView.SCROLL_STATE_IDLE) {\r\n                    connect.setVisibility(View.VISIBLE);\r\n                    list_item.setBackgroundColor(getResources().getColor(R.color.light_yellow));\r\n                    name_text.setTextColor(getResources().getColor(R.color.colorPrimary));\r\n                    name_text.animate().setDuration(350).scaleX(1.2f).scaleY(1.2f).setInterpolator(new AccelerateDecelerateInterpolator()).start();\r\n                    connect.setOnClickListener(new View.OnClickListener() {\r\n                        @Override\r\n                        public void onClick(View v) {\r\n                            recyclerView.animate().setDuration(DURATION).translationY(y_TRANS).setInterpolator(new AccelerateDecelerateInterpolator()).start();\r\n                            show=false;\r\n\r\n                            textView.setText(\"Connecting to.. \"+ name);\r\n                            textView.setVisibility(View.VISIBLE);\r\n                            progressBar.setVisibility(View.VISIBLE);\r\n                            progressBar.setProgress(10,true);\r\n\r\n\r\n                            new Thread() {\r\n                                public void run() {\r\n\r\n                                    boolean fail = false;\r\n                                    BluetoothDevice device = bluetooth.getRemoteDevice(address);\r\n\r\n                                    try {\r\n                                        mBTSocket = createBluetoothSocket(device);\r\n                                    } catch (IOException e) {\r\n                                        fail = true;\r\n                                        runOnUiThread(new Runnable(){\r\n                                            public void run() {\r\n                                                Log.e(TAG, \"handleMessage: Socket Creation Failed\");\r\n                                                textView.setText(\"Socket Creation Failed: Your Device might not support Bluetooth\");\r\n                                            }\r\n                                        });\r\n                                    }\r\n                                    // Establish the Bluetooth socket connection.\r\n                                    try {\r\n                                        mBTSocket.connect();\r\n                                    } catch (IOException e) {\r\n                                        try {\r\n                                            fail = true;\r\n                                            mBTSocket.close();\r\n                                            runOnUiThread(new Runnable(){\r\n                                                public void run() {\r\n                                                    Log.e(TAG, \"handleMessage: Connection Failed\");\r\n                                                    textView.setText(\"Connection Failed. Please try again\");\r\n                                                }\r\n                                            });\r\n                                            Intent intent = new Intent(MainActivity.this,MainActivity.class);\r\n                                            startActivity(intent);\r\n                                        } catch (IOException e2) {\r\n                                            runOnUiThread(new Runnable(){\r\n                                                public void run() {\r\n                                                    Log.e(TAG, \"handleMessage: Socket Creation Failed\");\r\n                                                    textView.setText(\"Socket Creation Failed: Your Device might not support Bluetooth\");\r\n                                                }\r\n                                            });\r\n                                        }\r\n                                    }\r\n                                    if (!fail) {\r\n                                        progressBar.setProgress(60,true);\r\n                                        System.out.println(mBTSocket.isConnected());\r\n                                        runOnUiThread(new Runnable(){\r\n                                            public void run() {\r\n                                                Log.d(TAG, \"handleMessage: Connected to Device: \" + name );\r\n                                                textView.setText(\"Connected to \" + name);\r\n                                                setTitle(name);\r\n                                            }\r\n                                        });\r\n                                        mConnectedThread = new ConnectedThread(mBTSocket);\r\n                                        mConnectedThread.start();\r\n                                        mConnectedThread.write(\"read_device\");\r\n                                    }\r\n                                }\r\n                            }.start();\r\n                        }\r\n                    });\r\n                }else {\r\n                    connect.setVisibility(View.GONE);\r\n                    list_item.setBackgroundColor(getResources().getColor(R.color.no_color));\r\n                    name_text.setTextColor(Color.parseColor(\"#000000\"));\r\n                    name_text.animate().setDuration(350).scaleX(1).scaleY(1).setInterpolator(new AccelerateDecelerateInterpolator()).start();\r\n                }\r\n            }\r\n        });\r\n\r\n        change_room.setOnClickListener(new View.OnClickListener() {\r\n            @Override\r\n            public void onClick(View v) {\r\n                if (!show) {\r\n                    show=true;\r\n                    Log.d(TAG, \"onClick: True\");\r\n                    recyclerView.animate().setDuration(DURATION).translationY(0).setInterpolator(new AccelerateDecelerateInterpolator()).start();\r\n                } else {\r\n                    show=false;\r\n                    Log.d(TAG, \"onClick: False\");\r\n                    recyclerView.animate().setDuration(DURATION).translationY(y_TRANS).setInterpolator(new AccelerateDecelerateInterpolator()).start();\r\n                }\r\n            }\r\n        });\r\n    }\r\n\r\n    @Override\r\n    public boolean onCreateOptionsMenu(Menu menu) {\r\n        MenuInflater menuInflater = getMenuInflater();\r\n        menuInflater.inflate(R.menu.menu, menu);\r\n        return true;\r\n    }\r\n\r\n    @Override\r\n    public boolean onOptionsItemSelected(@NonNull MenuItem item) {\r\n        if (item.getItemId() == R.id.help) {\r\n            Intent intent = new Intent(MainActivity.this,HelpActivity.class);\r\n            startActivity(intent);\r\n            return true;\r\n        }\r\n        return super.onOptionsItemSelected(item);\r\n    }\r\n\r\n    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {\r\n        return device.createRfcommSocketToServiceRecord(BTMODULEUUID);\r\n        //creates secure outgoing connection with BT device using UUID\r\n    }\r\n\r\n    class ConnectedThread extends Thread {\r\n        private final BluetoothSocket mmSocket;\r\n        private final InputStream mmInStream;\r\n        private final OutputStream mmOutStream;\r\n\r\n        public ConnectedThread(BluetoothSocket socket) {\r\n            mmSocket = socket;\r\n            InputStream tmpIn = null;\r\n            OutputStream tmpOut = null;\r\n\r\n            // Get the input and output streams, using temp objects because\r\n            // member streams are final\r\n            try {\r\n                tmpIn = socket.getInputStream();\r\n                tmpOut = socket.getOutputStream();\r\n            } catch (IOException e) { }\r\n\r\n            mmInStream = tmpIn;\r\n            mmOutStream = tmpOut;\r\n        }\r\n        @Override\r\n        public void run() {\r\n            byte[] buffer = new byte[1024];  // buffer store for the stream\r\n            int bytes; // bytes returned from read()\r\n            // Keep listening to the InputStream until an exception occurs\r\n            while (true) {\r\n                try {\r\n                    // Read from the InputStream\r\n                    bytes = mmInStream.available();\r\n                    if (bytes != 0) {\r\n                        SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.\r\n                        bytes = mmInStream.available(); // how many bytes are ready to be read?\r\n                        bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read\r\n\r\n                        System.out.println(\"reading....\");\r\n                        String data = new String((byte[]) buffer, StandardCharsets.UTF_8);\r\n\r\n\r\n                        int i = 0;\r\n                        while (data.charAt(i) != '\\n') i++;\r\n\r\n                        data = data.substring(0, i-1);\r\n                        if(Pattern.matches(\"(\\\\d:[a-zA-Z]:\\\\d,)*$\",data)) getDevices(data);\r\n                        else if(data.contains(\"Acknowledgement\")){\r\n                            runOnUiThread(new Runnable() {\r\n                                @Override\r\n                                public void run() {\r\n                                    load.setVisibility(View.GONE);\r\n                                }\r\n                            });\r\n                            Log.d(TAG, \"run: \" + data);\r\n                        }\r\n                        //mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();\r\n                    }\r\n\r\n                } catch (IOException e) {\r\n                    e.printStackTrace();\r\n\r\n                    break;\r\n                }\r\n            }\r\n        }\r\n\r\n        /* Call this from the main activity to send data to the remote device */\r\n        public void write(String input) {\r\n            byte[] bytes = input.getBytes();           //converts entered String into bytes\r\n            try {\r\n                mmOutStream.write(bytes);\r\n            } catch (IOException e) { }\r\n        }\r\n        /* Call this from the main activity to shutdown the connection */\r\n        public void cancel() {\r\n            try {\r\n                mmSocket.close();\r\n            } catch (IOException e) { }\r\n        }\r\n        private void getDevices(String data) {\r\n            runOnUiThread(new Runnable() {\r\n                @Override\r\n                public void run() {\r\n                    textView.setText(\"Setting up Remote\");\r\n                }\r\n            });\r\n            final ArrayList<Devices> device_list = new ArrayList<>(); // no of devices supported in arduino\r\n\r\n            int i = 0;\r\n            while (i < data.length()-1) {\r\n                int dev_no = 0;\r\n                while (i < data.length() && Character.isDigit(data.charAt(i))) {\r\n                    dev_no = dev_no * 10 + Character.getNumericValue(data.charAt(i));\r\n                    i++;\r\n                }\r\n\r\n                i++; // skip :\r\n\r\n                String device_code = \"\";\r\n                while (i < data.length() && Character.isLetter(data.charAt(i))) {\r\n                    device_code += data.charAt(i);\r\n                    i++;\r\n                }\r\n\r\n                i++; // skip :\r\n\r\n                int status = 0;\r\n                while (i < data.length() && Character.isDigit(data.charAt(i))) {\r\n                    status = status * 10 + Character.getNumericValue(data.charAt(i));\r\n                    i++;\r\n                }\r\n\r\n                // create ListItem -->change to android code\r\n                Devices device = new Devices(dev_no, device_code,status);\r\n                device_list.add(device);\r\n\r\n                i++; // skip ,\r\n            }\r\n            runOnUiThread(new Runnable() {\r\n                @Override\r\n                public void run() {\r\n                    progressBar.setProgress(100,true);\r\n                    CustomGrid gridAdapter = new CustomGrid(MainActivity.this, device_list);\r\n                    grid.setAdapter(gridAdapter);\r\n                    grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {\r\n                        @Override\r\n                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {\r\n                            load.setVisibility(View.VISIBLE);\r\n                            imageGrid = view.findViewById(R.id.grid_image);\r\n                            textGrid = view.findViewById(R.id.grid_text);\r\n                            Devices dev = device_list.get(position);\r\n                            if(dev.status==1) {\r\n                                dev.status=0;\r\n                                view.setBackgroundResource(R.drawable.round);\r\n                                textGrid.setTextColor(getResources().getColor(R.color.orange));\r\n                                imageGrid.setColorFilter(getResources().getColor(R.color.orange));\r\n                            } else {\r\n                                dev.status=1;\r\n                                view.setBackgroundResource(R.drawable.round_orange);\r\n                                textGrid.setTextColor(getResources().getColor(R.color.colorPrimary));\r\n                                imageGrid.setColorFilter(getResources().getColor(R.color.colorPrimary));\r\n                            }\r\n                            String  control = dev.dev_no + \":\" + dev.status;\r\n                            System.out.println(control);\r\n                            write(control);\r\n//                            if(dev.name==\"Tubelight\") if(dev.status==1) imageGrid.setImageResource(R.drawable.tubelight_on); else imageGrid.setImageResource(R.drawable.tubelight_off);\r\n//                            if(dev.name==\"Fan\") if(dev.status==1) imageGrid.setImageResource(R.drawable.fan_on); else imageGrid.setImageResource(R.drawable.fan_off);\r\n//                            if(dev.name==\"Socket\") if(dev.status==1) imageGrid.setImageResource(R.drawable.socket_on); else imageGrid.setImageResource(R.drawable.socket_off);\r\n//                            if(dev.name==\"Lamp\") if(dev.status==1) imageGrid.setImageResource(R.drawable.lamp_on); else imageGrid.setImageResource(R.drawable.lamp_off);\r\n//                            if(dev.name==\"CFL\") if(dev.status==1) imageGrid.setImageResource(R.drawable.cfl_on); else imageGrid.setImageResource(R.drawable.cfl_off);\r\n//                            if(dev.name==\"Ceiling light\") if(dev.status==1) imageGrid.setImageResource(R.drawable.ceiling_light_on); else imageGrid.setImageResource(R.drawable.ceiling_light_off);\r\n//                            if(dev.name==\"Bulb\") if(dev.status==1) imageGrid.setImageResource(R.drawable.bulb_on); else imageGrid.setImageResource(R.drawable.bulb_off);\r\n                        }\r\n                    });\r\n                    Log.d(TAG, \"getDevices: setting remote now\");\r\n                    relativeLayout.setVisibility(View.GONE);\r\n                    change_room.setVisibility(View.VISIBLE);\r\n                    Log.d(TAG, \"getDevices: Now grid should be visible\");\r\n                }\r\n            });\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/homeautomation/MainActivity.java	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/src/main/java/com/example/homeautomation/MainActivity.java	(date 1608448592770)
+@@ -249,7 +249,7 @@
+ 
+     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
+         return device.createRfcommSocketToServiceRecord(BTMODULEUUID);
+-        //creates secure outgoing connection with BT device using UUID
++        // creates secure outgoing connection with BT device using UUID
+     }
+ 
+     class ConnectedThread extends Thread {
+Index: app/src/main/res/values/colors.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<resources>\r\n    <color name=\"colorPrimary\">#FFFFFF</color>\r\n    <color name=\"colorPrimaryDark\">#BCBCBC</color>\r\n    <color name=\"colorAccent\">#D81B60</color>\r\n    <color name=\"orange\">#FF6F00</color>\r\n    <color name=\"grey\">#D1D1D1</color>\r\n    <color name=\"dark_white\">#D0F2F2F2</color>\r\n    <color name =\"light_orange\">#FFF5E6</color>\r\n    <color name =\"no_color\">#00FFFFFF</color>\r\n    <color name =\"light_yellow\">#F8A224</color>\r\n    <color name=\"light_white\">#C3FFFFFF</color>\r\n</resources>\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/values/colors.xml	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/src/main/res/values/colors.xml	(date 1608465283031)
+@@ -10,4 +10,5 @@
+     <color name ="no_color">#00FFFFFF</color>
+     <color name ="light_yellow">#F8A224</color>
+     <color name="light_white">#C3FFFFFF</color>
++    <color name="un_selected_color">#C38A8A8A</color>
+ </resources>
+Index: app/src/main/res/values/styles.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><resources>\r\n\r\n    <!-- Base application theme. -->\r\n    <style name=\"AppTheme\" parent=\"Theme.AppCompat.Light.DarkActionBar\">\r\n        <!-- Customize your theme here. -->\r\n        <item name=\"colorPrimary\">@color/orange</item>\r\n        <item name=\"colorPrimaryDark\">@color/orange</item>\r\n        <item name=\"colorAccent\">@color/colorAccent</item>\r\n        <item name=\"titleTextColor\">#FFFFFF</item>\r\n    </style>\r\n\r\n    <style name=\"AppTheme.NoActionBar\">\r\n        <item name=\"windowActionBar\">false</item>\r\n        <item name=\"windowNoTitle\">true</item>\r\n    </style>\r\n\r\n\r\n    <style name=\"AppTheme.SlidrActivityTheme\">\r\n        <item name=\"android:windowIsTranslucent\">true</item>\r\n        <item name=\"android:windowBackground\">@android:color/transparent</item>\r\n    </style>\r\n\r\n    <style name=\"AppTheme.AppBarOverlay\" parent=\"ThemeOverlay.AppCompat.Dark.ActionBar\" />\r\n\r\n    <style name=\"AppTheme.PopupOverlay\" parent=\"ThemeOverlay.AppCompat.Light\" />\r\n\r\n</resources>\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/values/styles.xml	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/src/main/res/values/styles.xml	(date 1608465283041)
+@@ -7,21 +7,37 @@
+         <item name="colorPrimaryDark">@color/orange</item>
+         <item name="colorAccent">@color/colorAccent</item>
+         <item name="titleTextColor">#FFFFFF</item>
++
++        <item name="fontFamily">@font/open_sans</item>
+     </style>
+ 
+     <style name="AppTheme.NoActionBar">
+         <item name="windowActionBar">false</item>
+         <item name="windowNoTitle">true</item>
++
++        <item name="fontFamily">@font/open_sans</item>
++    </style>
++
++    <style name="AppIntroStyle" parent="Theme.AppCompat.Light.NoActionBar">
++        <item name="android:windowTranslucentStatus">true</item>
++        <item name="fontFamily">@font/open_sans</item>
+     </style>
+ 
+-
+     <style name="AppTheme.SlidrActivityTheme">
+         <item name="android:windowIsTranslucent">true</item>
+         <item name="android:windowBackground">@android:color/transparent</item>
++
++        <item name="fontFamily">@font/open_sans</item>
+     </style>
+ 
+     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+ 
+     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+ 
++    <style name="SplashTheme" parent="Theme.AppCompat.Light.NoActionBar">
++        <item name="android:windowBackground">@drawable/splash_bg</item>
++        <item name="android:windowTranslucentStatus">true</item>
++        <item name="fontFamily">@font/open_sans</item>
++    </style>
++
+ </resources>
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>apply plugin: 'com.android.application'\r\n\r\nandroid {\r\n    compileSdkVersion 30\r\n    buildToolsVersion \"29.0.2\"\r\n    defaultConfig {\r\n        applicationId \"com.example.homeautomation\"\r\n        minSdkVersion 24\r\n        targetSdkVersion 30\r\n        versionCode 1\r\n        versionName \"1.0\"\r\n        testInstrumentationRunner \"androidx.test.runner.AndroidJUnitRunner\"\r\n    }\r\n    buildTypes {\r\n        release {\r\n            minifyEnabled false\r\n            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\r\n        }\r\n    }\r\n}\r\n\r\ndependencies {\r\n    implementation fileTree(dir: 'libs', include: ['*.jar'])\r\n    implementation 'androidx.appcompat:appcompat:1.2.0'\r\n    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'\r\n    implementation 'com.google.android.material:material:1.2.1'\r\n    implementation 'com.r0adkll:slidableactivity:2.0.6'\r\n    testImplementation 'junit:junit:4.13.1'\r\n    androidTestImplementation 'androidx.test.ext:junit:1.1.2'\r\n    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/build.gradle	(date 1608457346228)
+@@ -25,6 +25,10 @@
+     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+     implementation 'com.google.android.material:material:1.2.1'
+     implementation 'com.r0adkll:slidableactivity:2.0.6'
++
++    // App Intro Library
++    compile 'com.github.paolorotolo:appintro:3.4.0'
++
+     testImplementation 'junit:junit:4.13.1'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+Index: app/src/main/res/layout/grid_single.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<androidx.constraintlayout.widget.ConstraintLayout\r\n    xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"match_parent\"\r\n    android:padding=\"5dp\"\r\n    android:orientation=\"vertical\"\r\n    android:gravity=\"center\"\r\n    android:background=\"@drawable/round\"\r\n    android:id=\"@+id/grid_layout\"\r\n    >\r\n\r\n    <ImageView\r\n        android:id=\"@+id/grid_image\"\r\n        android:layout_width=\"120dp\"\r\n        android:layout_height=\"120dp\"\r\n        android:layout_gravity=\"center\"\r\n        android:background=\"#00FFFFFF\"\r\n        android:padding=\"30dp\"\r\n        android:contentDescription=\"@string/todo\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toTopOf=\"parent\"\r\n        app:srcCompat=\"@drawable/ic_launcher\" />\r\n\r\n    <TextView\r\n        android:id=\"@+id/grid_text\"\r\n        android:layout_width=\"wrap_content\"\r\n        android:layout_height=\"wrap_content\"\r\n        android:layout_below=\"@+id/grid_image\"\r\n        android:layout_alignParentStart=\"true\"\r\n        android:layout_alignParentEnd=\"true\"\r\n        android:layout_alignParentBottom=\"true\"\r\n        android:layout_marginBottom=\"10dp\"\r\n        android:text=\"@string/app_name\"\r\n        android:textAllCaps=\"false\"\r\n        android:textAppearance=\"@style/TextAppearance.AppCompat.Large\"\r\n        android:textColor=\"@color/orange\"\r\n        android:textSize=\"20sp\"\r\n        android:textStyle=\"bold\"\r\n        android:visibility=\"visible\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toBottomOf=\"@+id/grid_image\"\r\n        app:layout_constraintVertical_bias=\"0.359\" />\r\n\r\n</androidx.constraintlayout.widget.ConstraintLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/grid_single.xml	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/src/main/res/layout/grid_single.xml	(date 1608462717352)
+@@ -18,7 +18,7 @@
+         android:layout_height="120dp"
+         android:layout_gravity="center"
+         android:background="#00FFFFFF"
+-        android:padding="30dp"
++        android:padding="12dp"
+         android:contentDescription="@string/todo"
+         app:layout_constraintBottom_toBottomOf="parent"
+         app:layout_constraintEnd_toEndOf="parent"
+@@ -39,7 +39,7 @@
+         android:textAllCaps="false"
+         android:textAppearance="@style/TextAppearance.AppCompat.Large"
+         android:textColor="@color/orange"
+-        android:textSize="20sp"
++        android:textSize="22sp"
+         android:textStyle="bold"
+         android:visibility="visible"
+         app:layout_constraintBottom_toBottomOf="parent"
+Index: app/src/main/res/layout/activity_main.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<androidx.constraintlayout.widget.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"match_parent\"\r\n    android:visibility=\"visible\"\r\n    android:background=\"@color/light_orange\"\r\n    tools:context=\".MainActivity\">\r\n\r\n    <GridView\r\n        android:id=\"@+id/grid\"\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"match_parent\"\r\n        android:layout_marginEnd=\"8dp\"\r\n        android:layout_marginBottom=\"8dp\"\r\n        android:columnWidth=\"100dp\"\r\n        android:gravity=\"center\"\r\n        android:layout_margin=\"20dp\"\r\n        android:numColumns=\"2\"\r\n        android:visibility=\"visible\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toTopOf=\"parent\"\r\n        android:horizontalSpacing=\"20dp\"\r\n        android:verticalSpacing=\"20dp\">\r\n\r\n    </GridView>\r\n\r\n    <RelativeLayout\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"match_parent\"\r\n        android:id=\"@+id/load\"\r\n        android:background=\"@color/light_white\"\r\n        android:clickable=\"true\"\r\n        android:focusable=\"true\"\r\n        android:visibility=\"gone\">\r\n\r\n        <ImageView\r\n            android:id=\"@+id/loading\"\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"match_parent\"\r\n            android:foregroundGravity=\"center\"\r\n            android:padding=\"150dp\"\r\n            android:src=\"@drawable/loading\"\r\n            android:contentDescription=\"@string/todo\" />\r\n\r\n    </RelativeLayout>\r\n\r\n    <RelativeLayout\r\n        android:id=\"@+id/relativeLayout\"\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"match_parent\"\r\n        android:background=\"@drawable/splash\"\r\n        android:visibility=\"visible\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintHorizontal_bias=\"1.0\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toTopOf=\"parent\"\r\n        app:layout_constraintVertical_bias=\"0.0\">\r\n\r\n        <ProgressBar\r\n            android:id=\"@+id/progress_horizontal\"\r\n            android:layout_marginHorizontal=\"40dp\"\r\n            android:layout_marginBottom=\"300dp\"\r\n            android:layout_marginTop=\"400dp\"\r\n            android:layout_alignParentStart=\"true\"\r\n            android:layout_alignParentTop=\"true\"\r\n            android:layout_alignParentEnd=\"true\"\r\n            android:layout_alignParentBottom=\"true\"\r\n            android:visibility=\"gone\"\r\n            style=\"@style/Widget.AppCompat.ProgressBar.Horizontal\"\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"wrap_content\" />\r\n\r\n        <TextView\r\n            android:id=\"@+id/textView\"\r\n            android:layout_width=\"wrap_content\"\r\n            android:layout_height=\"86dp\"\r\n            android:layout_alignParentStart=\"true\"\r\n            android:layout_alignParentTop=\"true\"\r\n            android:layout_alignParentEnd=\"true\"\r\n            android:layout_alignParentBottom=\"true\"\r\n            android:layout_marginStart=\"70dp\"\r\n            android:layout_marginTop=\"421dp\"\r\n            android:layout_marginEnd=\"70dp\"\r\n            android:layout_marginBottom=\"212dp\"\r\n            android:gravity=\"center\"\r\n            android:text=\"@string/loading\"\r\n            android:textAppearance=\"@style/TextAppearance.AppCompat.Large\"\r\n            android:textColor=\"@color/orange\"\r\n            android:visibility=\"gone\" />\r\n\r\n    </RelativeLayout>\r\n\r\n    <androidx.recyclerview.widget.RecyclerView\r\n        android:id=\"@+id/recycler_view\"\r\n        android:scrollbars=\"vertical\"\r\n        android:scrollbarThumbVertical=\"@color/orange\"\r\n        android:scrollbarSize=\"3dp\"\r\n        android:scrollbarStyle=\"insideInset\"\r\n        android:background=\"@drawable/round_top\"\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"257dp\"\r\n        android:layout_alignParentStart=\"true\"\r\n        android:layout_alignParentTop=\"true\"\r\n        android:layout_alignParentEnd=\"true\"\r\n        android:layout_alignParentBottom=\"true\"\r\n        android:layout_marginBottom=\"9dp\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        android:visibility=\"visible\"/>\r\n\r\n    <ImageButton\r\n        android:id=\"@+id/change_room\"\r\n        android:layout_width=\"50dp\"\r\n        android:layout_height=\"50dp\"\r\n        android:layout_marginEnd=\"30dp\"\r\n        android:layout_marginBottom=\"30dp\"\r\n        android:background=\"@drawable/circle_orange\"\r\n        android:contentDescription=\"@string/todo\"\r\n        android:src=\"@android:drawable/ic_popup_sync\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\" />\r\n\r\n\r\n\r\n</androidx.constraintlayout.widget.ConstraintLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_main.xml	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/src/main/res/layout/activity_main.xml	(date 1608464401236)
+@@ -103,7 +103,7 @@
+         android:scrollbarStyle="insideInset"
+         android:background="@drawable/round_top"
+         android:layout_width="match_parent"
+-        android:layout_height="257dp"
++        android:layout_height="256dp"
+         android:layout_alignParentStart="true"
+         android:layout_alignParentTop="true"
+         android:layout_alignParentEnd="true"
+@@ -118,8 +118,8 @@
+         android:id="@+id/change_room"
+         android:layout_width="50dp"
+         android:layout_height="50dp"
+-        android:layout_marginEnd="30dp"
+-        android:layout_marginBottom="30dp"
++        android:layout_marginEnd="32dp"
++        android:layout_marginBottom="32dp"
+         android:background="@drawable/circle_orange"
+         android:contentDescription="@string/todo"
+         android:src="@android:drawable/ic_popup_sync"
+Index: .idea/jarRepositories.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"RemoteRepositoriesConfiguration\">\r\n    <remote-repository>\r\n      <option name=\"id\" value=\"central\" />\r\n      <option name=\"name\" value=\"Maven Central repository\" />\r\n      <option name=\"url\" value=\"https://repo1.maven.org/maven2\" />\r\n    </remote-repository>\r\n    <remote-repository>\r\n      <option name=\"id\" value=\"jboss.community\" />\r\n      <option name=\"name\" value=\"JBoss Community repository\" />\r\n      <option name=\"url\" value=\"https://repository.jboss.org/nexus/content/repositories/public/\" />\r\n    </remote-repository>\r\n    <remote-repository>\r\n      <option name=\"id\" value=\"BintrayJCenter\" />\r\n      <option name=\"name\" value=\"BintrayJCenter\" />\r\n      <option name=\"url\" value=\"https://jcenter.bintray.com/\" />\r\n    </remote-repository>\r\n    <remote-repository>\r\n      <option name=\"id\" value=\"Google\" />\r\n      <option name=\"name\" value=\"Google\" />\r\n      <option name=\"url\" value=\"https://dl.google.com/dl/android/maven2/\" />\r\n    </remote-repository>\r\n    <remote-repository>\r\n      <option name=\"id\" value=\"maven\" />\r\n      <option name=\"name\" value=\"maven\" />\r\n      <option name=\"url\" value=\"https://jitpack.io\" />\r\n    </remote-repository>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/jarRepositories.xml	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ .idea/jarRepositories.xml	(date 1608457539882)
+@@ -26,5 +26,10 @@
+       <option name="name" value="maven" />
+       <option name="url" value="https://jitpack.io" />
+     </remote-repository>
++    <remote-repository>
++      <option name="id" value="MavenRepo" />
++      <option name="name" value="MavenRepo" />
++      <option name="url" value="https://repo.maven.apache.org/maven2/" />
++    </remote-repository>
+   </component>
+ </project>
+\ No newline at end of file
+Index: app/src/main/res/layout/list_single.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<androidx.constraintlayout.widget.ConstraintLayout\r\n    xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\r\n    android:layout_width=\"match_parent\"\r\n    android:layout_height=\"wrap_content\">\r\n\r\n\r\n    <RelativeLayout\r\n        android:id=\"@+id/list_item\"\r\n        android:layout_width=\"match_parent\"\r\n        android:layout_height=\"match_parent\"\r\n        app:layout_constraintBottom_toBottomOf=\"parent\"\r\n        app:layout_constraintEnd_toEndOf=\"parent\"\r\n        android:paddingVertical=\"15dp\"\r\n        app:layout_constraintStart_toStartOf=\"parent\"\r\n        app:layout_constraintTop_toTopOf=\"parent\">\r\n\r\n        <TextView\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"match_parent\"\r\n            android:visibility=\"gone\"\r\n            android:id=\"@+id/address\"\r\n            android:text=\"@string/address\"/>\r\n\r\n        <TextView\r\n            android:id=\"@+id/text\"\r\n            android:layout_width=\"match_parent\"\r\n            android:layout_height=\"match_parent\"\r\n            android:layout_marginStart=\"100dp\"\r\n            android:fontFamily=\"sans-serif-medium\"\r\n            android:gravity=\"center_vertical\"\r\n            android:text=\"@string/device_name\"\r\n            android:textColor=\"@color/design_default_color_on_secondary\"\r\n            android:textSize=\"15sp\" />\r\n\r\n        <ImageButton\r\n            android:id=\"@+id/connect\"\r\n            android:layout_width=\"wrap_content\"\r\n            android:layout_height=\"match_parent\"\r\n            android:layout_alignParentEnd=\"true\"\r\n            android:paddingHorizontal=\"30dp\"\r\n            android:paddingVertical=\"-10dp\"\r\n            android:background=\"@color/no_color\"\r\n            android:contentDescription=\"@string/todo\"\r\n            android:foregroundGravity=\"center_vertical\"\r\n            android:src=\"@drawable/connect_foreground\"\r\n            android:visibility=\"gone\" />\r\n    </RelativeLayout>\r\n\r\n\r\n</androidx.constraintlayout.widget.ConstraintLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/list_single.xml	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ app/src/main/res/layout/list_single.xml	(date 1608463119389)
+@@ -32,7 +32,7 @@
+             android:gravity="center_vertical"
+             android:text="@string/device_name"
+             android:textColor="@color/design_default_color_on_secondary"
+-            android:textSize="15sp" />
++            android:textSize="16sp" />
+ 
+         <ImageButton
+             android:id="@+id/connect"
+Index: app/src/main/java/com/example/homeautomation/IntroScreen.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/homeautomation/IntroScreen.java	(date 1608465790443)
++++ app/src/main/java/com/example/homeautomation/IntroScreen.java	(date 1608465790443)
+@@ -0,0 +1,76 @@
++package com.example.homeautomation;
++
++import android.content.Intent;
++import android.content.SharedPreferences;
++import android.os.Bundle;
++
++import androidx.annotation.NonNull;
++import androidx.annotation.Nullable;
++import androidx.fragment.app.Fragment;
++
++import com.github.paolorotolo.appintro.AppIntro;
++import com.github.paolorotolo.appintro.AppIntroFragment;
++
++public class IntroScreen extends AppIntro {
++
++    SharedPreferences sharedPreferences;
++    SharedPreferences.Editor editor;
++
++    @Override
++    public void init(@Nullable Bundle savedInstanceState) {
++
++        sharedPreferences = sharedPreferences = getSharedPreferences("CheckIntro", MODE_PRIVATE);
++        editor = sharedPreferences.edit();
++
++        setColorDoneText(getResources().getColor(R.color.orange));
++        setColorSkipButton(getResources().getColor(R.color.orange));
++        setSeparatorColor(getResources().getColor(R.color.orange));
++        setIndicatorColor(getResources().getColor(R.color.orange), getResources().getColor(R.color.un_selected_color));
++
++        addSlide(AppIntroFragment.newInstance("",
++                "Make your Home Smarter",
++                R.drawable.frame4,
++                getResources().getColor(R.color.colorPrimary),
++                getResources().getColor(R.color.orange),
++                getResources().getColor(R.color.orange)));
++
++
++        addSlide(AppIntroFragment.newInstance("",
++                "Access your home smart devices right from your mobile ",
++                R.drawable.fan,
++                getResources().getColor(R.color.colorPrimary),
++                getResources().getColor(R.color.orange),
++                getResources().getColor(R.color.orange)));
++
++        addSlide(AppIntroFragment.newInstance("",
++                "Connect your devices with Bluetooth & Wifi",
++                R.drawable.lamp,
++                getResources().getColor(R.color.colorPrimary),
++                getResources().getColor(R.color.orange),
++                getResources().getColor(R.color.orange)));
++    }
++
++    @Override
++    public void onSkipPressed() {
++        editor.putBoolean("isIntroduced", true).apply();
++        startActivity(new Intent(IntroScreen.this, MainActivity.class));
++        finish();
++    }
++
++    @Override
++    public void onNextPressed() {
++        // no need to implement here
++    }
++
++    @Override
++    public void onDonePressed() {
++        editor.putBoolean("isIntroduced", true).apply();
++        startActivity(new Intent(IntroScreen.this, MainActivity.class));
++        finish();
++    }
++
++    @Override
++    public void onSlideChanged() {
++        // no need to implement here
++    }
++}
+Index: app/src/main/res/font/open_sans.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/font/open_sans.xml	(date 1605723077593)
++++ app/src/main/res/font/open_sans.xml	(date 1605723077593)
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<font-family xmlns:android="http://schemas.android.com/apk/res/android">
++
++    <font android:font="@font/open_sans_regular"
++        android:fontStyle="normal"
++        android:fontWeight="400"/>
++
++    <font android:font="@font/open_sans_italic"
++        android:fontStyle="italic"
++        android:fontWeight="400"/>
++
++</font-family>
+\ No newline at end of file
+Index: app/src/main/res/drawable/splash_bg.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/drawable/splash_bg.xml	(date 1608463663660)
++++ app/src/main/res/drawable/splash_bg.xml	(date 1608463663660)
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="utf-8"?>
++<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
++
++    <item android:drawable="@color/colorPrimary"
++        android:top="0dp"
++        android:bottom="0dp"
++        android:start="0dp"
++        android:end="0dp"/>
++
++    <item android:drawable="@drawable/frame4"
++        android:gravity="center"
++        android:width="136dp"
++        android:height="136dp"/>
++
++</layer-list>
+\ No newline at end of file
+Index: app/src/main/java/com/example/homeautomation/SplashScreen.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/homeautomation/SplashScreen.java	(date 1608463667451)
++++ app/src/main/java/com/example/homeautomation/SplashScreen.java	(date 1608463667451)
+@@ -0,0 +1,28 @@
++package com.example.homeautomation;
++
++import android.content.Intent;
++import android.content.SharedPreferences;
++import android.os.Bundle;
++
++import androidx.annotation.Nullable;
++import androidx.appcompat.app.AppCompatActivity;
++
++public class SplashScreen extends AppCompatActivity {
++
++    SharedPreferences sharedPreferences;
++
++    @Override
++    protected void onCreate(@Nullable Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++
++        sharedPreferences = sharedPreferences = getSharedPreferences("CheckIntro", MODE_PRIVATE);
++
++        if (sharedPreferences.getBoolean("isIntroduced", false)){
++            startActivity(new Intent(SplashScreen.this, MainActivity.class));
++            finish();
++        }else {
++            startActivity(new Intent(SplashScreen.this, IntroScreen.class));
++            finish();
++        }
++    }
++}
+Index: build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>// Top-level build file where you can add configuration options common to all sub-projects/modules.\r\n\r\nbuildscript {\r\n    repositories {\r\n        google()\r\n        jcenter()\r\n        \r\n    }\r\n    dependencies {\r\n        classpath 'com.android.tools.build:gradle:4.1.1'\r\n        \r\n        // NOTE: Do not place your application dependencies here; they belong\r\n        // in the individual module build.gradle files\r\n    }\r\n}\r\n\r\nallprojects {\r\n    repositories {\r\n        google()\r\n        jcenter()\r\n        \r\n    }\r\n}\r\n\r\ntask clean(type: Delete) {\r\n    delete rootProject.buildDir\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- build.gradle	(revision 1309d105ae9fbc1eadba4519ffba10bffe09672f)
++++ build.gradle	(date 1608457475212)
+@@ -18,7 +18,8 @@
+     repositories {
+         google()
+         jcenter()
+-        
++
++        mavenCentral()
+     }
+ }
+ 

@@ -37,14 +37,14 @@ public class IntroScreen extends AppIntro {
 
         addSlide(AppIntroFragment.newInstance("",
                 "Access your home smart devices right from your mobile ",
-                R.drawable.fan,
+                R.drawable.ic_fan,
                 getResources().getColor(R.color.colorPrimary),
                 getResources().getColor(R.color.orange),
                 getResources().getColor(R.color.orange)));
 
         addSlide(AppIntroFragment.newInstance("",
                 "Connect your devices with Bluetooth & Wifi",
-                R.drawable.lamp,
+                R.drawable.ic_lamp,
                 getResources().getColor(R.color.colorPrimary),
                 getResources().getColor(R.color.orange),
                 getResources().getColor(R.color.orange)));
