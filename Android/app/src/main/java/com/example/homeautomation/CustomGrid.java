@@ -30,7 +30,7 @@ public class  CustomGrid extends BaseAdapter{
     }
 
     @Override
-    public Object getItem(int position) {
+    public Devices getItem(int position) {
         return devices.get(position);
     }
 

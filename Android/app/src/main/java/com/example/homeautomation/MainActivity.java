@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView.LayoutManager layoutManager;
     RecyclerView.Adapter rAdapter;
     AnimationDrawable animationDrawable;
+    CustomGrid gridAdapter;
 
     ArrayList<BTdevice> bluetoothDevices = new ArrayList<>();
 
@@ -150,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
                     connect.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+                            load.setVisibility(View.GONE);
                             recyclerView.animate().setDuration(DURATION).translationY(y_TRANS).setInterpolator(new AccelerateDecelerateInterpolator()).start();
                             show=false;
 
@@ -309,11 +311,16 @@ public class MainActivity extends AppCompatActivity {
 
                         data = data.substring(0, i-1);
                         if(Pattern.matches("(\\d:[a-zA-Z]:\\d,)*$",data)) getDevices(data);
-                        else if(data.contains("Acknowledgement")){
+                        else if(Pattern.matches("(\\d:\\d)$",data)){
+                            String finalData = data;
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     load.setVisibility(View.GONE);
+                                    Devices device = gridAdapter.getItem(Character.getNumericValue(finalData.charAt(0)));
+                                    device.status=Character.getNumericValue(finalData.charAt(2));
+                                    device.printDevices();
+                                    grid.setAdapter(gridAdapter);
                                 }
                             });
                             Log.d(TAG, "run: " + data);
@@ -385,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     progressBar.setProgress(100,true);
-                    CustomGrid gridAdapter = new CustomGrid(MainActivity.this, device_list);
+                    gridAdapter = new CustomGrid(MainActivity.this, device_list);
                     grid.setAdapter(gridAdapter);
                     grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                         @Override
